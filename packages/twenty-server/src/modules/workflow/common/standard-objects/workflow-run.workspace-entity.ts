@@ -1,3 +1,5 @@
+import { FieldMetadataType } from 'twenty-shared';
+
 import { Relation } from 'src/engine/workspace-manager/workspace-sync-metadata/interfaces/relation.interface';
 
 import { FeatureFlagKey } from 'src/engine/core-modules/feature-flag/enums/feature-flag-key.enum';
@@ -5,7 +7,6 @@ import {
   ActorMetadata,
   FieldActorSource,
 } from 'src/engine/metadata-modules/field-metadata/composite-types/actor.composite-type';
-import { FieldMetadataType } from 'src/engine/metadata-modules/field-metadata/field-metadata.entity';
 import {
   RelationMetadataType,
   RelationOnDeleteAction,
@@ -19,6 +20,7 @@ import { WorkspaceIsSystem } from 'src/engine/twenty-orm/decorators/workspace-is
 import { WorkspaceJoinColumn } from 'src/engine/twenty-orm/decorators/workspace-join-column.decorator';
 import { WorkspaceRelation } from 'src/engine/twenty-orm/decorators/workspace-relation.decorator';
 import { WORKFLOW_RUN_STANDARD_FIELD_IDS } from 'src/engine/workspace-manager/workspace-sync-metadata/constants/standard-field-ids';
+import { STANDARD_OBJECT_ICONS } from 'src/engine/workspace-manager/workspace-sync-metadata/constants/standard-object-icons';
 import { STANDARD_OBJECT_IDS } from 'src/engine/workspace-manager/workspace-sync-metadata/constants/standard-object-ids';
 import { FavoriteWorkspaceEntity } from 'src/modules/favorite/standard-objects/favorite.workspace-entity';
 import { TimelineActivityWorkspaceEntity } from 'src/modules/timeline/standard-objects/timeline-activity.workspace-entity';
@@ -32,15 +34,20 @@ export enum WorkflowRunStatus {
   FAILED = 'FAILED',
 }
 
-export type WorkflowRunOutput = {
-  steps: {
-    id: string;
-    name: string;
-    type: string;
+type StepRunOutput = {
+  id: string;
+  name: string;
+  type: string;
+  outputs: {
     attemptCount: number;
     result: object | undefined;
     error: string | undefined;
   }[];
+};
+
+export type WorkflowRunOutput = {
+  steps: Record<string, StepRunOutput>;
+  error?: string;
 };
 
 @WorkspaceEntity({
@@ -50,7 +57,7 @@ export type WorkflowRunOutput = {
   labelPlural: 'Workflow Runs',
   description: 'A workflow run',
   labelIdentifierStandardId: WORKFLOW_RUN_STANDARD_FIELD_IDS.name,
-  icon: 'IconSettingsAutomation',
+  icon: STANDARD_OBJECT_ICONS.workflowRun,
 })
 @WorkspaceGate({
   featureFlag: FeatureFlagKey.IsWorkflowEnabled,
@@ -96,7 +103,7 @@ export class WorkflowRunWorkspaceEntity extends BaseWorkspaceEntity {
         value: WorkflowRunStatus.NOT_STARTED,
         label: 'Not started',
         position: 0,
-        color: 'grey',
+        color: 'gray',
       },
       {
         value: WorkflowRunStatus.RUNNING,
@@ -124,9 +131,9 @@ export class WorkflowRunWorkspaceEntity extends BaseWorkspaceEntity {
   @WorkspaceField({
     standardId: WORKFLOW_RUN_STANDARD_FIELD_IDS.createdBy,
     type: FieldMetadataType.ACTOR,
-    label: 'Created by',
+    label: 'Executed by',
     icon: 'IconCreativeCommonsSa',
-    description: 'The creator of the record',
+    description: 'The executor of the workflow',
     defaultValue: {
       source: `'${FieldActorSource.MANUAL}'`,
       name: "''",
@@ -150,10 +157,10 @@ export class WorkflowRunWorkspaceEntity extends BaseWorkspaceEntity {
     label: 'Position',
     description: 'Workflow run position',
     icon: 'IconHierarchy2',
+    defaultValue: 0,
   })
   @WorkspaceIsSystem()
-  @WorkspaceIsNullable()
-  position: number | null;
+  position: number;
 
   // Relations
   @WorkspaceRelation({

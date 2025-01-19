@@ -10,20 +10,20 @@ import {
   IconDoorEnter,
   IconFunction,
   IconHierarchy2,
+  IconKey,
   IconMail,
   IconRocket,
+  IconServer,
   IconSettings,
-  IconTool,
   IconUserCircle,
   IconUsers,
-  MAIN_COLORS,
 } from 'twenty-ui';
 
 import { useAuth } from '@/auth/hooks/useAuth';
+import { currentUserState } from '@/auth/states/currentUserState';
 import { billingState } from '@/client-config/states/billingState';
+import { AdvancedSettingsWrapper } from '@/settings/components/AdvancedSettingsWrapper';
 import { SettingsNavigationDrawerItem } from '@/settings/components/SettingsNavigationDrawerItem';
-import { useExpandedHeightAnimation } from '@/settings/hooks/useExpandedHeightAnimation';
-import { getSettingsPagePath } from '@/settings/utils/getSettingsPagePath';
 import { SettingsPath } from '@/types/SettingsPath';
 import {
   NavigationDrawerItem,
@@ -32,12 +32,12 @@ import {
 import { NavigationDrawerItemGroup } from '@/ui/navigation/navigation-drawer/components/NavigationDrawerItemGroup';
 import { NavigationDrawerSection } from '@/ui/navigation/navigation-drawer/components/NavigationDrawerSection';
 import { NavigationDrawerSectionTitle } from '@/ui/navigation/navigation-drawer/components/NavigationDrawerSectionTitle';
-import { isAdvancedModeEnabledState } from '@/ui/navigation/navigation-drawer/states/isAdvancedModeEnabledState';
-import { getNavigationSubItemState } from '@/ui/navigation/navigation-drawer/utils/getNavigationSubItemState';
+import { getNavigationSubItemLeftAdornment } from '@/ui/navigation/navigation-drawer/utils/getNavigationSubItemLeftAdornment';
 import { useIsFeatureEnabled } from '@/workspace/hooks/useIsFeatureEnabled';
-import styled from '@emotion/styled';
-import { AnimatePresence, motion } from 'framer-motion';
+import { useLingui } from '@lingui/react/macro';
 import { matchPath, resolvePath, useLocation } from 'react-router-dom';
+import { FeatureFlagKey } from '~/generated/graphql';
+import { getSettingsPath } from '~/utils/navigation/getSettingsPath';
 
 type SettingsNavigationItem = {
   label: string;
@@ -47,53 +47,35 @@ type SettingsNavigationItem = {
   matchSubPages?: boolean;
 };
 
-const StyledIconContainer = styled.div`
-  border-right: 1px solid ${MAIN_COLORS.yellow};
-  position: absolute;
-  left: ${({ theme }) => theme.spacing(-5)};
-  margin-top: ${({ theme }) => theme.spacing(2)};
-  height: 75%;
-`;
-
-const StyledDeveloperSection = styled.div`
-  display: flex;
-  width: 100%;
-  gap: ${({ theme }) => theme.spacing(1)};
-  position: relative;
-`;
-
-const StyledIconTool = styled(IconTool)`
-  margin-right: ${({ theme }) => theme.spacing(0.5)};
-`;
-
 export const SettingsNavigationDrawerItems = () => {
-  const isAdvancedModeEnabled = useRecoilValue(isAdvancedModeEnabledState);
-  const { contentRef, motionAnimationVariants } = useExpandedHeightAnimation(
-    isAdvancedModeEnabled,
-  );
   const { signOut } = useAuth();
+
+  const { t } = useLingui();
 
   const billing = useRecoilValue(billingState);
   const isFunctionSettingsEnabled = useIsFeatureEnabled(
-    'IS_FUNCTION_SETTINGS_ENABLED',
+    FeatureFlagKey.IsFunctionSettingsEnabled,
   );
-  const isFreeAccessEnabled = useIsFeatureEnabled('IS_FREE_ACCESS_ENABLED');
-  const isCRMMigrationEnabled = useIsFeatureEnabled('IS_CRM_MIGRATION_ENABLED');
+  const isFreeAccessEnabled = useIsFeatureEnabled(
+    FeatureFlagKey.IsFreeAccessEnabled,
+  );
   const isBillingPageEnabled =
     billing?.isBillingEnabled && !isFreeAccessEnabled;
 
+  const currentUser = useRecoilValue(currentUserState);
+  const isAdminPageEnabled = currentUser?.canImpersonate;
   // TODO: Refactor this part to only have arrays of navigation items
   const currentPathName = useLocation().pathname;
 
   const accountSubSettings: SettingsNavigationItem[] = [
     {
-      label: 'Emails',
+      label: t`Emails`,
       path: SettingsPath.AccountsEmails,
       Icon: IconMail,
       indentationLevel: 2,
     },
     {
-      label: 'Calendars',
+      label: t`Calendars`,
       path: SettingsPath.AccountsCalendars,
       Icon: IconCalendarEvent,
       indentationLevel: 2,
@@ -101,7 +83,7 @@ export const SettingsNavigationDrawerItems = () => {
   ];
 
   const selectedIndex = accountSubSettings.findIndex((accountSubSetting) => {
-    const href = getSettingsPagePath(accountSubSetting.path);
+    const href = getSettingsPath(accountSubSetting.path);
     const pathName = resolvePath(href).pathname;
 
     return matchPath(
@@ -116,20 +98,20 @@ export const SettingsNavigationDrawerItems = () => {
   return (
     <>
       <NavigationDrawerSection>
-        <NavigationDrawerSectionTitle label="User" />
+        <NavigationDrawerSectionTitle label={t`User`} />
         <SettingsNavigationDrawerItem
-          label="Profile"
+          label={t`Profile`}
           path={SettingsPath.ProfilePage}
           Icon={IconUserCircle}
         />
         <SettingsNavigationDrawerItem
-          label="Experience"
-          path={SettingsPath.Appearance}
+          label={t`Experience`}
+          path={SettingsPath.Experience}
           Icon={IconColorSwatch}
         />
         <NavigationDrawerItemGroup>
           <SettingsNavigationDrawerItem
-            label="Accounts"
+            label={t`Accounts`}
             path={SettingsPath.Accounts}
             Icon={IconAt}
             matchSubPages={false}
@@ -141,7 +123,7 @@ export const SettingsNavigationDrawerItems = () => {
               path={navigationItem.path}
               Icon={navigationItem.Icon}
               indentationLevel={navigationItem.indentationLevel}
-              subItemState={getNavigationSubItemState({
+              subItemState={getNavigationSubItemLeftAdornment({
                 arrayLength: accountSubSettings.length,
                 index,
                 selectedIndex,
@@ -151,83 +133,80 @@ export const SettingsNavigationDrawerItems = () => {
         </NavigationDrawerItemGroup>
       </NavigationDrawerSection>
       <NavigationDrawerSection>
-        <NavigationDrawerSectionTitle label="Workspace" />
+        <NavigationDrawerSectionTitle label={t`Workspace`} />
         <SettingsNavigationDrawerItem
-          label="General"
+          label={t`General`}
           path={SettingsPath.Workspace}
           Icon={IconSettings}
         />
         <SettingsNavigationDrawerItem
-          label="Members"
+          label={t`Members`}
           path={SettingsPath.WorkspaceMembersPage}
           Icon={IconUsers}
         />
         {isBillingPageEnabled && (
           <SettingsNavigationDrawerItem
-            label="Billing"
+            label={t`Billing`}
             path={SettingsPath.Billing}
             Icon={IconCurrencyDollar}
           />
         )}
         <SettingsNavigationDrawerItem
-          label="Data model"
+          label={t`Data model`}
           path={SettingsPath.Objects}
           Icon={IconHierarchy2}
         />
         <SettingsNavigationDrawerItem
-          label="Integrations"
+          label={t`Integrations`}
           path={SettingsPath.Integrations}
           Icon={IconApps}
         />
-        {isCRMMigrationEnabled && (
+        <AdvancedSettingsWrapper navigationDrawerItem={true}>
           <SettingsNavigationDrawerItem
-            label="CRM Migration"
-            path={SettingsPath.CRMMigration}
+            label={t`Security`}
+            path={SettingsPath.Security}
+            Icon={IconKey}
+          />
+        </AdvancedSettingsWrapper>
+      </NavigationDrawerSection>
+
+      <NavigationDrawerSection>
+        <AdvancedSettingsWrapper hideIcon>
+          <NavigationDrawerSectionTitle label="Developers" />
+        </AdvancedSettingsWrapper>
+        <AdvancedSettingsWrapper navigationDrawerItem={true}>
+          <SettingsNavigationDrawerItem
+            label={t`API & Webhooks`}
+            path={SettingsPath.Developers}
             Icon={IconCode}
           />
+        </AdvancedSettingsWrapper>
+        {isFunctionSettingsEnabled && (
+          <AdvancedSettingsWrapper navigationDrawerItem={true}>
+            <SettingsNavigationDrawerItem
+              label={t`Functions`}
+              path={SettingsPath.ServerlessFunctions}
+              Icon={IconFunction}
+            />
+          </AdvancedSettingsWrapper>
         )}
       </NavigationDrawerSection>
-      <AnimatePresence>
-        {isAdvancedModeEnabled && (
-          <motion.div
-            ref={contentRef}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            variants={motionAnimationVariants}
-          >
-            <StyledDeveloperSection>
-              <StyledIconContainer>
-                <StyledIconTool size={12} color={MAIN_COLORS.yellow} />
-              </StyledIconContainer>
-              <NavigationDrawerSection>
-                <NavigationDrawerSectionTitle label="Developers" />
-                <SettingsNavigationDrawerItem
-                  label="API & Webhooks"
-                  path={SettingsPath.Developers}
-                  Icon={IconCode}
-                />
-                {isFunctionSettingsEnabled && (
-                  <SettingsNavigationDrawerItem
-                    label="Functions"
-                    path={SettingsPath.ServerlessFunctions}
-                    Icon={IconFunction}
-                  />
-                )}
-              </NavigationDrawerSection>
-            </StyledDeveloperSection>
-          </motion.div>
-        )}
-      </AnimatePresence>
       <NavigationDrawerSection>
-        <NavigationDrawerSectionTitle label="Other" />
+        <NavigationDrawerSectionTitle label={t`Other`} />
+        {isAdminPageEnabled && (
+          <SettingsNavigationDrawerItem
+            label={t`Server Admin Panel`}
+            path={SettingsPath.AdminPanel}
+            Icon={IconServer}
+          />
+        )}
         <SettingsNavigationDrawerItem
-          label="Releases"
+          label={t`Releases`}
           path={SettingsPath.Releases}
           Icon={IconRocket}
         />
         <NavigationDrawerItem
-          label="Logout"
+          label={t`Logout`}
           onClick={signOut}
           Icon={IconDoorEnter}
         />

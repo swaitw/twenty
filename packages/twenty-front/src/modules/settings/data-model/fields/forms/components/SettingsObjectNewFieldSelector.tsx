@@ -8,16 +8,17 @@ import { useBooleanSettingsFormInitialValues } from '@/settings/data-model/field
 import { useCurrencySettingsFormInitialValues } from '@/settings/data-model/fields/forms/currency/hooks/useCurrencySettingsFormInitialValues';
 import { useSelectSettingsFormInitialValues } from '@/settings/data-model/fields/forms/select/hooks/useSelectSettingsFormInitialValues';
 import { SettingsFieldType } from '@/settings/data-model/types/SettingsFieldType';
+import { SettingsPath } from '@/types/SettingsPath';
 import { TextInput } from '@/ui/input/components/TextInput';
-import { UndecoratedLink } from '@/ui/navigation/link/components/UndecoratedLink';
 import { useTheme } from '@emotion/react';
 import styled from '@emotion/styled';
 import { Section } from '@react-email/components';
 import { useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
-import { H2Title, IconSearch } from 'twenty-ui';
+import { H2Title, IconSearch, UndecoratedLink } from 'twenty-ui';
 import { FieldMetadataType } from '~/generated-metadata/graphql';
 import { SettingsDataModelFieldTypeFormValues } from '~/pages/settings/data-model/SettingsObjectNewField/SettingsObjectNewFieldSelect';
+import { getSettingsPath } from '~/utils/navigation/getSettingsPath';
 
 type SettingsObjectNewFieldSelectorProps = {
   className?: string;
@@ -27,7 +28,7 @@ type SettingsObjectNewFieldSelectorProps = {
     'defaultValue' | 'options' | 'type'
   >;
 
-  objectSlug: string;
+  objectNamePlural: string;
 };
 
 const StyledTypeSelectContainer = styled.div`
@@ -59,7 +60,7 @@ const StyledSearchInput = styled(TextInput)`
 export const SettingsObjectNewFieldSelector = ({
   excludedFieldTypes = [],
   fieldMetadataItem,
-  objectSlug,
+  objectNamePlural,
 }: SettingsObjectNewFieldSelectorProps) => {
   const theme = useTheme();
   const { control, setValue } =
@@ -129,7 +130,11 @@ export const SettingsObjectNewFieldSelector = ({
                     .map(([key, config]) => (
                       <StyledCardContainer key={key}>
                         <UndecoratedLink
-                          to={`/settings/objects/${objectSlug}/new-field/configure?fieldType=${key}`}
+                          to={getSettingsPath(
+                            SettingsPath.ObjectNewFieldConfigure,
+                            { objectNamePlural },
+                            { fieldType: key },
+                          )}
                           fullWidth
                           onClick={() => {
                             setValue('type', key as SettingsFieldType);

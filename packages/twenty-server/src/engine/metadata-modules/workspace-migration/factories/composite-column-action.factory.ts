@@ -1,9 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 
+import { FieldMetadataType } from 'twenty-shared';
+
 import { FieldMetadataInterface } from 'src/engine/metadata-modules/field-metadata/interfaces/field-metadata.interface';
 
 import { compositeTypeDefinitions } from 'src/engine/metadata-modules/field-metadata/composite-types';
-import { FieldMetadataType } from 'src/engine/metadata-modules/field-metadata/field-metadata.entity';
 import { computeCompositeColumnName } from 'src/engine/metadata-modules/field-metadata/utils/compute-column-name.util';
 import { serializeDefaultValue } from 'src/engine/metadata-modules/field-metadata/utils/serialize-default-value';
 import { ColumnActionAbstractFactory } from 'src/engine/metadata-modules/workspace-migration/factories/column-action-abstract.factory';
@@ -183,7 +184,10 @@ export class CompositeColumnActionFactory extends ColumnActionAbstractFactory<Co
           enum: enumOptions,
           isNullable:
             alteredFieldMetadata.isNullable || !alteredProperty.isRequired,
-          isUnique: alteredFieldMetadata.isUnique ?? false,
+          isUnique:
+            (alteredFieldMetadata.isUnique &&
+              alteredProperty.isIncludedInUniqueConstraint) ??
+            false,
           defaultValue: serializedDefaultValue,
           isArray:
             alteredProperty.type === FieldMetadataType.MULTI_SELECT ||

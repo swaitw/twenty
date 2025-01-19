@@ -15,7 +15,10 @@ import {
   SettingsDataModelFieldPreviewCardProps,
 } from '@/settings/data-model/fields/preview/components/SettingsDataModelFieldPreviewCard';
 import { useIsMobile } from '@/ui/utilities/responsive/hooks/useIsMobile';
-import { FieldMetadataType } from '~/generated-metadata/graphql';
+import {
+  FieldMetadataType,
+  RelationDefinitionType,
+} from '~/generated-metadata/graphql';
 type SettingsDataModelFieldRelationSettingsFormCardProps = {
   fieldMetadataItem: Pick<FieldMetadataItem, 'icon' | 'label' | 'type'> &
     Partial<Omit<FieldMetadataItem, 'icon' | 'label' | 'type'>>;
@@ -23,7 +26,6 @@ type SettingsDataModelFieldRelationSettingsFormCardProps = {
 } & Pick<SettingsDataModelFieldPreviewCardProps, 'objectMetadataItem'>;
 
 const StyledFieldPreviewCard = styled(SettingsDataModelFieldPreviewCard)`
-  display: grid;
   flex: 1 1 100%;
 `;
 
@@ -87,6 +89,10 @@ export const SettingsDataModelFieldRelationSettingsFormCard = ({
             shrink
             objectMetadataItem={objectMetadataItem}
             relationObjectMetadataItem={relationObjectMetadataItem}
+            pluralizeLabel={
+              watchFormValue('relation.type') ===
+              RelationDefinitionType.ManyToOne
+            }
           />
           <StyledRelationImage
             src={relationTypeConfig.imageSrc}
@@ -111,6 +117,10 @@ export const SettingsDataModelFieldRelationSettingsFormCard = ({
             shrink
             objectMetadataItem={relationObjectMetadataItem}
             relationObjectMetadataItem={objectMetadataItem}
+            pluralizeLabel={
+              watchFormValue('relation.type') !==
+              RelationDefinitionType.ManyToOne
+            }
           />
         </StyledPreviewContent>
       }

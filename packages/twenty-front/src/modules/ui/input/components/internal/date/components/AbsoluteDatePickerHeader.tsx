@@ -1,8 +1,7 @@
 import styled from '@emotion/styled';
 import { DateTime } from 'luxon';
-import { IconChevronLeft, IconChevronRight } from 'twenty-ui';
+import { IconChevronLeft, IconChevronRight, LightIconButton } from 'twenty-ui';
 
-import { LightIconButton } from '@/ui/input/button/components/LightIconButton';
 import { Select } from '@/ui/input/components/Select';
 import { DateTimeInput } from '@/ui/input/components/internal/date/components/DateTimeInput';
 
@@ -39,6 +38,7 @@ type AbsoluteDatePickerHeaderProps = {
   nextMonthButtonDisabled: boolean;
   isDateTimeInput?: boolean;
   timeZone: string;
+  hideInput?: boolean;
 };
 
 export const AbsoluteDatePickerHeader = ({
@@ -52,6 +52,7 @@ export const AbsoluteDatePickerHeader = ({
   nextMonthButtonDisabled,
   isDateTimeInput,
   timeZone,
+  hideInput = false,
 }: AbsoluteDatePickerHeaderProps) => {
   const endOfDayDateTimeInLocalTimezone = DateTime.now().set({
     day: date.getDate(),
@@ -67,17 +68,19 @@ export const AbsoluteDatePickerHeader = ({
 
   return (
     <>
-      <DateTimeInput
-        date={date}
-        isDateTimeInput={isDateTimeInput}
-        onChange={onChange}
-        userTimezone={timeZone}
-      />
+      {!hideInput && (
+        <DateTimeInput
+          date={date}
+          isDateTimeInput={isDateTimeInput}
+          onChange={onChange}
+          userTimezone={timeZone}
+        />
+      )}
+
       <StyledCustomDatePickerHeader>
         <Select
           dropdownId={MONTH_AND_YEAR_DROPDOWN_MONTH_SELECT_ID}
           options={getMonthSelectOptions()}
-          disableBlur
           onChange={onChangeMonth}
           value={endOfDayInLocalTimezone.getMonth()}
           fullWidth
@@ -87,7 +90,6 @@ export const AbsoluteDatePickerHeader = ({
           onChange={onChangeYear}
           value={endOfDayInLocalTimezone.getFullYear()}
           options={years}
-          disableBlur
           fullWidth
         />
         <LightIconButton

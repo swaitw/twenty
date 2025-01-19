@@ -1,7 +1,13 @@
+import { FieldMetadataType } from 'twenty-shared';
+
 import { Relation } from 'src/engine/workspace-manager/workspace-sync-metadata/interfaces/relation.interface';
 
 import { FeatureFlagKey } from 'src/engine/core-modules/feature-flag/enums/feature-flag-key.enum';
-import { FieldMetadataType } from 'src/engine/metadata-modules/field-metadata/field-metadata.entity';
+import {
+  ActorMetadata,
+  FieldActorSource,
+} from 'src/engine/metadata-modules/field-metadata/composite-types/actor.composite-type';
+import { FieldMetadataComplexOption } from 'src/engine/metadata-modules/field-metadata/dtos/options.input';
 import {
   RelationMetadataType,
   RelationOnDeleteAction,
@@ -14,6 +20,7 @@ import { WorkspaceIsNullable } from 'src/engine/twenty-orm/decorators/workspace-
 import { WorkspaceIsSystem } from 'src/engine/twenty-orm/decorators/workspace-is-system.decorator';
 import { WorkspaceRelation } from 'src/engine/twenty-orm/decorators/workspace-relation.decorator';
 import { WORKFLOW_STANDARD_FIELD_IDS } from 'src/engine/workspace-manager/workspace-sync-metadata/constants/standard-field-ids';
+import { STANDARD_OBJECT_ICONS } from 'src/engine/workspace-manager/workspace-sync-metadata/constants/standard-object-icons';
 import { STANDARD_OBJECT_IDS } from 'src/engine/workspace-manager/workspace-sync-metadata/constants/standard-object-ids';
 import { FavoriteWorkspaceEntity } from 'src/modules/favorite/standard-objects/favorite.workspace-entity';
 import { TimelineActivityWorkspaceEntity } from 'src/modules/timeline/standard-objects/timeline-activity.workspace-entity';
@@ -27,7 +34,7 @@ export enum WorkflowStatus {
   DEACTIVATED = 'DEACTIVATED',
 }
 
-const WorkflowStatusOptions = [
+const WorkflowStatusOptions: FieldMetadataComplexOption[] = [
   {
     value: WorkflowStatus.DRAFT,
     label: 'Draft',
@@ -44,7 +51,7 @@ const WorkflowStatusOptions = [
     value: WorkflowStatus.DEACTIVATED,
     label: 'Deactivated',
     position: 2,
-    color: 'grey',
+    color: 'gray',
   },
 ];
 
@@ -54,7 +61,8 @@ const WorkflowStatusOptions = [
   labelSingular: 'Workflow',
   labelPlural: 'Workflows',
   description: 'A workflow',
-  icon: 'IconSettingsAutomation',
+  icon: STANDARD_OBJECT_ICONS.workflow,
+  shortcut: 'W',
   labelIdentifierStandardId: WORKFLOW_STANDARD_FIELD_IDS.name,
 })
 @WorkspaceGate({
@@ -97,10 +105,10 @@ export class WorkflowWorkspaceEntity extends BaseWorkspaceEntity {
     label: 'Position',
     description: 'Workflow record position',
     icon: 'IconHierarchy2',
+    defaultValue: 0,
   })
   @WorkspaceIsSystem()
-  @WorkspaceIsNullable()
-  position: number | null;
+  position: number;
 
   // Relations
   @WorkspaceRelation({
@@ -158,4 +166,17 @@ export class WorkflowWorkspaceEntity extends BaseWorkspaceEntity {
   })
   @WorkspaceIsSystem()
   timelineActivities: Relation<TimelineActivityWorkspaceEntity[]>;
+
+  @WorkspaceField({
+    standardId: WORKFLOW_STANDARD_FIELD_IDS.createdBy,
+    type: FieldMetadataType.ACTOR,
+    label: 'Created by',
+    icon: 'IconCreativeCommonsSa',
+    description: 'The creator of the record',
+    defaultValue: {
+      source: `'${FieldActorSource.MANUAL}'`,
+      name: "''",
+    },
+  })
+  createdBy: ActorMetadata;
 }

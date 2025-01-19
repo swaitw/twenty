@@ -27,7 +27,9 @@ export const useShowAuthModal = () => {
 
     if (
       isMatchingLocation(AppPath.Invite) ||
-      isMatchingLocation(AppPath.ResetPassword)
+      isMatchingLocation(AppPath.ResetPassword) ||
+      isMatchingLocation(AppPath.VerifyEmail) ||
+      isMatchingLocation(AppPath.SignInUp)
     ) {
       return isDefaultLayoutAuthModalVisible;
     }

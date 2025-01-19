@@ -1,30 +1,27 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
+import { isDefined } from 'class-validator';
 import { Repository } from 'typeorm';
 
 import { BillingSubscription } from 'src/engine/core-modules/billing/entities/billing-subscription.entity';
+import { BillingPlanKey } from 'src/engine/core-modules/billing/enums/billing-plan-key.enum';
 import { BillingSubscriptionService } from 'src/engine/core-modules/billing/services/billing-subscription.service';
-import { StripeService } from 'src/engine/core-modules/billing/stripe/stripe.service';
-import { EnvironmentService } from 'src/engine/core-modules/environment/environment.service';
+import { StripeBillingPortalService } from 'src/engine/core-modules/billing/stripe/services/stripe-billing-portal.service';
+import { StripeCheckoutService } from 'src/engine/core-modules/billing/stripe/services/stripe-checkout.service';
+import { DomainManagerService } from 'src/engine/core-modules/domain-manager/service/domain-manager.service';
 import { UserWorkspace } from 'src/engine/core-modules/user-workspace/user-workspace.entity';
 import { User } from 'src/engine/core-modules/user/user.entity';
 import { Workspace } from 'src/engine/core-modules/workspace/workspace.entity';
 import { assert } from 'src/utils/assert';
 
-export enum WebhookEvent {
-  CUSTOMER_SUBSCRIPTION_CREATED = 'customer.subscription.created',
-  CUSTOMER_SUBSCRIPTION_UPDATED = 'customer.subscription.updated',
-  CUSTOMER_SUBSCRIPTION_DELETED = 'customer.subscription.deleted',
-  SETUP_INTENT_SUCCEEDED = 'setup_intent.succeeded',
-}
-
 @Injectable()
 export class BillingPortalWorkspaceService {
   protected readonly logger = new Logger(BillingPortalWorkspaceService.name);
   constructor(
-    private readonly stripeService: StripeService,
-    private readonly environmentService: EnvironmentService,
+    private readonly stripeCheckoutService: StripeCheckoutService,
+    private readonly stripeBillingPortalService: StripeBillingPortalService,
+    private readonly domainManagerService: DomainManagerService,
     @InjectRepository(BillingSubscription, 'core')
     private readonly billingSubscriptionRepository: Repository<BillingSubscription>,
     @InjectRepository(UserWorkspace, 'core')
@@ -37,30 +34,41 @@ export class BillingPortalWorkspaceService {
     workspace: Workspace,
     priceId: string,
     successUrlPath?: string,
+    plan?: BillingPlanKey,
+    requirePaymentMethod?: boolean,
   ): Promise<string> {
-    const frontBaseUrl = this.environmentService.get('FRONT_BASE_URL');
-    const successUrl = successUrlPath
-      ? frontBaseUrl + successUrlPath
-      : frontBaseUrl;
+    const frontBaseUrl = this.domainManagerService.buildWorkspaceURL({
+      subdomain: workspace.subdomain,
+    });
+    const cancelUrl = frontBaseUrl.toString();
+
+    if (successUrlPath) {
+      frontBaseUrl.pathname = successUrlPath;
+    }
+    const successUrl = frontBaseUrl.toString();
 
     const quantity = await this.userWorkspaceRepository.countBy({
       workspaceId: workspace.id,
     });
 
-    const stripeCustomerId = (
-      await this.billingSubscriptionRepository.findOneBy({
-        workspaceId: user.defaultWorkspaceId,
-      })
-    )?.stripeCustomerId;
+    const subscription = await this.billingSubscriptionRepository.findOneBy({
+      workspaceId: workspace.id,
+    });
 
-    const session = await this.stripeService.createCheckoutSession(
+    const stripeCustomerId = subscription?.stripeCustomerId;
+
+    const session = await this.stripeCheckoutService.createCheckoutSession({
       user,
+      workspaceId: workspace.id,
       priceId,
       quantity,
       successUrl,
-      frontBaseUrl,
+      cancelUrl,
       stripeCustomerId,
-    );
+      plan,
+      requirePaymentMethod,
+      withTrialPeriod: !isDefined(subscription),
+    });
 
     assert(session.url, 'Error: missing checkout.session.url');
 
@@ -68,13 +76,13 @@ export class BillingPortalWorkspaceService {
   }
 
   async computeBillingPortalSessionURLOrThrow(
-    workspaceId: string,
+    workspace: Workspace,
     returnUrlPath?: string,
   ) {
     const currentSubscription =
       await this.billingSubscriptionService.getCurrentBillingSubscriptionOrThrow(
         {
-          workspaceId,
+          workspaceId: workspace.id,
         },
       );
 
@@ -88,15 +96,20 @@ export class BillingPortalWorkspaceService {
       throw new Error('Error: missing stripeCustomerId');
     }
 
-    const frontBaseUrl = this.environmentService.get('FRONT_BASE_URL');
-    const returnUrl = returnUrlPath
-      ? frontBaseUrl + returnUrlPath
-      : frontBaseUrl;
+    const frontBaseUrl = this.domainManagerService.buildWorkspaceURL({
+      subdomain: workspace.subdomain,
+    });
 
-    const session = await this.stripeService.createBillingPortalSession(
-      stripeCustomerId,
-      returnUrl,
-    );
+    if (returnUrlPath) {
+      frontBaseUrl.pathname = returnUrlPath;
+    }
+    const returnUrl = frontBaseUrl.toString();
+
+    const session =
+      await this.stripeBillingPortalService.createBillingPortalSession(
+        stripeCustomerId,
+        returnUrl,
+      );
 
     assert(session.url, 'Error: missing billingPortal.session.url');
 

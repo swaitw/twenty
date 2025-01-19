@@ -9,7 +9,6 @@ import {
 } from '@nestjs/graphql';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import assert from 'assert';
 import crypto from 'crypto';
 
 import { GraphQLJSONObject } from 'graphql-type-json';
@@ -19,11 +18,16 @@ import { Repository } from 'typeorm';
 import { SupportDriver } from 'src/engine/core-modules/environment/interfaces/support.interface';
 import { FileFolder } from 'src/engine/core-modules/file/interfaces/file-folder.interface';
 
+import { AnalyticsService } from 'src/engine/core-modules/analytics/analytics.service';
+import { AnalyticsTinybirdJwtMap } from 'src/engine/core-modules/analytics/entities/analytics-tinybird-jwts.entity';
 import { EnvironmentService } from 'src/engine/core-modules/environment/environment.service';
 import { FileUploadService } from 'src/engine/core-modules/file/file-upload/services/file-upload.service';
 import { FileService } from 'src/engine/core-modules/file/services/file.service';
 import { OnboardingStatus } from 'src/engine/core-modules/onboarding/enums/onboarding-status.enum';
-import { OnboardingService } from 'src/engine/core-modules/onboarding/onboarding.service';
+import {
+  OnboardingService,
+  OnboardingStepKeys,
+} from 'src/engine/core-modules/onboarding/onboarding.service';
 import { WorkspaceMember } from 'src/engine/core-modules/user/dtos/workspace-member.dto';
 import { UserService } from 'src/engine/core-modules/user/services/user.service';
 import { UserVarsService } from 'src/engine/core-modules/user/user-vars/services/user-vars.service';
@@ -34,6 +38,15 @@ import { AuthWorkspace } from 'src/engine/decorators/auth/auth-workspace.decorat
 import { DemoEnvGuard } from 'src/engine/guards/demo.env.guard';
 import { WorkspaceAuthGuard } from 'src/engine/guards/workspace-auth.guard';
 import { streamToBuffer } from 'src/utils/stream-to-buffer';
+import { AccountsToReconnectKeys } from 'src/modules/connected-account/types/accounts-to-reconnect-key-value.type';
+import {
+  AuthException,
+  AuthExceptionCode,
+} from 'src/engine/core-modules/auth/auth.exception';
+import { userValidator } from 'src/engine/core-modules/user/user.validate';
+import { OriginHeader } from 'src/engine/decorators/auth/origin-header.decorator';
+import { DomainManagerService } from 'src/engine/core-modules/domain-manager/service/domain-manager.service';
+import { workspaceValidator } from 'src/engine/core-modules/workspace/workspace.validate';
 
 const getHMACKey = (email?: string, key?: string | null) => {
   if (!email || !key) return null;
@@ -55,20 +68,40 @@ export class UserResolver {
     private readonly onboardingService: OnboardingService,
     private readonly userVarService: UserVarsService,
     private readonly fileService: FileService,
+    private readonly analyticsService: AnalyticsService,
+    private readonly domainManagerService: DomainManagerService,
   ) {}
 
   @Query(() => User)
-  async currentUser(@AuthUser() { id: userId }: User): Promise<User> {
+  async currentUser(
+    @AuthUser() { id: userId }: User,
+    @OriginHeader() origin: string,
+  ): Promise<User> {
+    const workspace =
+      await this.domainManagerService.getWorkspaceByOriginOrDefaultWorkspace(
+        origin,
+      );
+
+    workspaceValidator.assertIsDefinedOrThrow(workspace);
+
+    await this.userService.hasUserAccessToWorkspaceOrThrow(
+      userId,
+      workspace.id,
+    );
+
     const user = await this.userRepository.findOne({
       where: {
         id: userId,
       },
-      relations: ['defaultWorkspace', 'workspaces', 'workspaces.workspace'],
+      relations: ['workspaces', 'workspaces.workspace'],
     });
 
-    assert(user, 'User not found');
+    userValidator.assertIsDefinedOrThrow(
+      user,
+      new AuthException('User not found', AuthExceptionCode.USER_NOT_FOUND),
+    );
 
-    return user;
+    return { ...user, currentWorkspace: workspace };
   }
 
   @ResolveField(() => GraphQLJSONObject)
@@ -78,14 +111,14 @@ export class UserResolver {
   ): Promise<Record<string, any>> {
     const userVars = await this.userVarService.getAll({
       userId: user.id,
-      workspaceId: workspace?.id ?? user.defaultWorkspaceId,
+      workspaceId: workspace.id,
     });
 
     const userVarAllowList = [
-      'SYNC_EMAIL_ONBOARDING_STEP',
-      'ACCOUNTS_TO_RECONNECT_INSUFFICIENT_PERMISSIONS',
-      'ACCOUNTS_TO_RECONNECT_EMAIL_ALIASES',
-    ];
+      OnboardingStepKeys.ONBOARDING_CONNECT_ACCOUNT_PENDING,
+      AccountsToReconnectKeys.ACCOUNTS_TO_RECONNECT_INSUFFICIENT_PERMISSIONS,
+      AccountsToReconnectKeys.ACCOUNTS_TO_RECONNECT_EMAIL_ALIASES,
+    ] as string[];
 
     const filteredMap = new Map(
       [...userVars].filter(([key]) => userVarAllowList.includes(key)),
@@ -103,13 +136,13 @@ export class UserResolver {
   ): Promise<WorkspaceMember | null> {
     const workspaceMember = await this.userService.loadWorkspaceMember(
       user,
-      workspace ?? user.defaultWorkspace,
+      workspace,
     );
 
     if (workspaceMember && workspaceMember.avatarUrl) {
       const avatarUrlToken = await this.fileService.encodeFileToken({
-        workspace_member_id: workspaceMember.id,
-        workspace_id: user.defaultWorkspaceId,
+        workspaceMemberId: workspaceMember.id,
+        workspaceId: workspace.id,
       });
 
       workspaceMember.avatarUrl = `${workspaceMember.avatarUrl}?token=${avatarUrlToken}`;
@@ -122,16 +155,18 @@ export class UserResolver {
   @ResolveField(() => [WorkspaceMember], {
     nullable: true,
   })
-  async workspaceMembers(@Parent() user: User): Promise<WorkspaceMember[]> {
-    const workspaceMembers = await this.userService.loadWorkspaceMembers(
-      user.defaultWorkspace,
-    );
+  async workspaceMembers(
+    @Parent() user: User,
+    @AuthWorkspace() workspace: Workspace,
+  ): Promise<WorkspaceMember[]> {
+    const workspaceMembers =
+      await this.userService.loadWorkspaceMembers(workspace);
 
     for (const workspaceMember of workspaceMembers) {
       if (workspaceMember.avatarUrl) {
         const avatarUrlToken = await this.fileService.encodeFileToken({
-          workspace_member_id: workspaceMember.id,
-          workspace_id: user.defaultWorkspaceId,
+          workspaceMemberId: workspaceMember.id,
+          workspaceId: workspace.id,
         });
 
         workspaceMember.avatarUrl = `${workspaceMember.avatarUrl}?token=${avatarUrlToken}`;
@@ -152,6 +187,11 @@ export class UserResolver {
     const key = this.environmentService.get('SUPPORT_FRONT_HMAC_KEY');
 
     return getHMACKey(parent.email, key);
+  }
+
+  @ResolveField(() => AnalyticsTinybirdJwtMap, { nullable: true })
+  analyticsTinybirdJwts(@AuthWorkspace() workspace: Workspace | undefined) {
+    return this.analyticsService.generateWorkspaceJwt(workspace?.id);
   }
 
   @Mutation(() => String)
@@ -178,7 +218,7 @@ export class UserResolver {
     });
 
     const fileToken = await this.fileService.encodeFileToken({
-      workspace_id: workspaceId,
+      workspaceId: workspaceId,
     });
 
     return `${paths[0]}?token=${fileToken}`;
@@ -192,7 +232,17 @@ export class UserResolver {
   }
 
   @ResolveField(() => OnboardingStatus)
-  async onboardingStatus(@Parent() user: User): Promise<OnboardingStatus> {
-    return this.onboardingService.getOnboardingStatus(user);
+  async onboardingStatus(
+    @Parent() user: User,
+    @OriginHeader() origin: string,
+  ): Promise<OnboardingStatus> {
+    const workspace =
+      await this.domainManagerService.getWorkspaceByOriginOrDefaultWorkspace(
+        origin,
+      );
+
+    workspaceValidator.assertIsDefinedOrThrow(workspace);
+
+    return this.onboardingService.getOnboardingStatus(user, workspace);
   }
 }

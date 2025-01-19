@@ -1,6 +1,6 @@
-import { FieldMetadataDefaultValue } from 'src/engine/metadata-modules/field-metadata/interfaces/field-metadata-default-value.interface';
+import { FieldMetadataType } from 'twenty-shared';
 
-import { FieldMetadataType } from 'src/engine/metadata-modules/field-metadata/field-metadata.entity';
+import { FieldMetadataDefaultValue } from 'src/engine/metadata-modules/field-metadata/interfaces/field-metadata-default-value.interface';
 
 export function generateDefaultValue(
   type: FieldMetadataType,
@@ -38,12 +38,13 @@ export function generateDefaultValue(
       return {
         primaryLinkLabel: "''",
         primaryLinkUrl: "''",
-        secondaryLinks: null,
+        secondaryLinks: "'[]'",
       };
     case FieldMetadataType.PHONES:
       return {
         primaryPhoneNumber: "''",
         primaryPhoneCountryCode: "''",
+        primaryPhoneCallingCode: "''",
         additionalPhones: null,
       };
     default:

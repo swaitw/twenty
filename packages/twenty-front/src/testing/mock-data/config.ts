@@ -1,18 +1,22 @@
-import { ClientConfig } from '~/generated-metadata/graphql';
-import { CaptchaDriverType } from '~/generated/graphql';
+import { CaptchaDriverType, ClientConfig } from '~/generated/graphql';
 
 export const mockedClientConfig: ClientConfig = {
   signInPrefilled: true,
-  signUpDisabled: false,
-  chromeExtensionId: 'MOCKED_EXTENSION_ID',
-  debugMode: false,
+  isMultiWorkspaceEnabled: false,
+  isEmailVerificationRequired: false,
   authProviders: {
     google: true,
-    password: true,
     magicLink: false,
+    password: true,
     microsoft: false,
+    sso: [],
     __typename: 'AuthProviders',
   },
+  frontDomain: 'localhost',
+  defaultSubdomain: 'app',
+  chromeExtensionId: 'MOCKED_EXTENSION_ID',
+  debugMode: false,
+  analyticsEnabled: true,
   support: {
     supportDriver: 'front',
     supportFrontChatId: null,
@@ -27,7 +31,18 @@ export const mockedClientConfig: ClientConfig = {
   billing: {
     isBillingEnabled: true,
     billingUrl: '',
-    billingFreeTrialDurationInDays: 10,
+    trialPeriods: [
+      {
+        __typename: 'TrialPeriodDTO',
+        duration: 30,
+        isCreditCardRequired: true,
+      },
+      {
+        __typename: 'TrialPeriodDTO',
+        duration: 7,
+        isCreditCardRequired: false,
+      },
+    ],
     __typename: 'Billing',
   },
   captcha: {
@@ -36,4 +51,5 @@ export const mockedClientConfig: ClientConfig = {
     __typename: 'Captcha',
   },
   api: { mutationMaximumAffectedRecords: 100 },
+  canManageFeatureFlags: true,
 };

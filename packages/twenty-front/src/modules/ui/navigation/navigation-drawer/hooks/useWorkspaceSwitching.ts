@@ -1,37 +1,46 @@
-import { useRecoilValue, useSetRecoilState } from 'recoil';
+import { useRecoilValue } from 'recoil';
 
 import { currentWorkspaceState } from '@/auth/states/currentWorkspaceState';
-import { tokenPairState } from '@/auth/states/tokenPairState';
-import { AppPath } from '@/types/AppPath';
-import { useGenerateJwtMutation } from '~/generated/graphql';
+
+import { isMultiWorkspaceEnabledState } from '@/client-config/states/isMultiWorkspaceEnabledState';
+import { useSnackBar } from '@/ui/feedback/snack-bar-manager/hooks/useSnackBar';
+import { SnackBarVariant } from '@/ui/feedback/snack-bar-manager/components/SnackBar';
+import { useSwitchWorkspaceMutation } from '~/generated/graphql';
 import { isDefined } from '~/utils/isDefined';
-import { sleep } from '~/utils/sleep';
+import { useRedirectToDefaultDomain } from '@/domain-manager/hooks/useRedirectToDefaultDomain';
+import { useRedirectToWorkspaceDomain } from '@/domain-manager/hooks/useRedirectToWorkspaceDomain';
 
 export const useWorkspaceSwitching = () => {
-  const setTokenPair = useSetRecoilState(tokenPairState);
-  const [generateJWT] = useGenerateJwtMutation();
+  const [switchWorkspaceMutation] = useSwitchWorkspaceMutation();
   const currentWorkspace = useRecoilValue(currentWorkspaceState);
+  const isMultiWorkspaceEnabled = useRecoilValue(isMultiWorkspaceEnabledState);
+  const { enqueueSnackBar } = useSnackBar();
+  const { redirectToDefaultDomain } = useRedirectToDefaultDomain();
+  const { redirectToWorkspaceDomain } = useRedirectToWorkspaceDomain();
 
   const switchWorkspace = async (workspaceId: string) => {
     if (currentWorkspace?.id === workspaceId) return;
-    const jwt = await generateJWT({
+
+    if (!isMultiWorkspaceEnabled) {
+      return enqueueSnackBar(
+        'Switching workspace is not available in single workspace mode',
+        {
+          variant: SnackBarVariant.Error,
+        },
+      );
+    }
+
+    const { data, errors } = await switchWorkspaceMutation({
       variables: {
         workspaceId,
       },
     });
 
-    if (isDefined(jwt.errors)) {
-      throw jwt.errors;
+    if (isDefined(errors) || !isDefined(data?.switchWorkspace.subdomain)) {
+      return redirectToDefaultDomain();
     }
 
-    if (!isDefined(jwt.data?.generateJWT)) {
-      throw new Error('could not create token');
-    }
-
-    const { tokens } = jwt.data.generateJWT;
-    setTokenPair(tokens);
-    await sleep(0); // This hacky workaround is necessary to ensure the tokens stored in the cookie are updated correctly.
-    window.location.href = AppPath.Index;
+    redirectToWorkspaceDomain(data.switchWorkspace.subdomain);
   };
 
   return { switchWorkspace };

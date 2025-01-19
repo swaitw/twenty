@@ -1,9 +1,8 @@
-import { useIsMatchingLocation } from '~/hooks/useIsMatchingLocation';
-import { SettingsPath } from '@/types/SettingsPath';
 import { apiKeyTokenState } from '@/settings/developers/states/generatedApiKeyTokenState';
+import { SettingsPath } from '@/types/SettingsPath';
 import { useRecoilValue, useResetRecoilState } from 'recoil';
-import { AppPath } from '@/types/AppPath';
-import { isDefined } from '~/utils/isDefined';
+import { isDefined } from 'twenty-ui';
+import { useIsMatchingLocation } from '~/hooks/useIsMatchingLocation';
 
 export const useCleanRecoilState = () => {
   const isMatchingLocation = useIsMatchingLocation();
@@ -11,9 +10,7 @@ export const useCleanRecoilState = () => {
   const apiKeyToken = useRecoilValue(apiKeyTokenState);
   const cleanRecoilState = () => {
     if (
-      !isMatchingLocation(
-        `${AppPath.Settings}/${AppPath.Developers}/${SettingsPath.DevelopersApiKeyDetail}`,
-      ) &&
+      !isMatchingLocation(SettingsPath.DevelopersApiKeyDetail) &&
       isDefined(apiKeyToken)
     ) {
       resetApiKeyToken();

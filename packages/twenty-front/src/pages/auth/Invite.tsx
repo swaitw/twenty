@@ -1,24 +1,23 @@
-import styled from '@emotion/styled';
-import { useMemo } from 'react';
-import { useRecoilValue } from 'recoil';
-
 import { Logo } from '@/auth/components/Logo';
 import { Title } from '@/auth/components/Title';
 import { FooterNote } from '@/auth/sign-in-up/components/FooterNote';
-import { SignInUpForm } from '@/auth/sign-in-up/components/SignInUpForm';
+import { SignInUpWorkspaceScopeForm } from '@/auth/sign-in-up/components/SignInUpWorkspaceScopeForm';
 import { useSignInUpForm } from '@/auth/sign-in-up/hooks/useSignInUpForm';
 import { useWorkspaceFromInviteHash } from '@/auth/sign-in-up/hooks/useWorkspaceFromInviteHash';
 import { currentWorkspaceState } from '@/auth/states/currentWorkspaceState';
-import { Loader } from '@/ui/feedback/loader/components/Loader';
-import { MainButton } from '@/ui/input/button/components/MainButton';
 import { useWorkspaceSwitching } from '@/ui/navigation/navigation-drawer/hooks/useWorkspaceSwitching';
-import { AnimatedEaseIn } from '@/ui/utilities/animation/components/AnimatedEaseIn';
+import styled from '@emotion/styled';
+import { useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useRecoilValue } from 'recoil';
+import { AnimatedEaseIn, Loader, MainButton } from 'twenty-ui';
 import {
-  useAddUserToWorkspaceMutation,
   useAddUserToWorkspaceByInviteTokenMutation,
+  useAddUserToWorkspaceMutation,
 } from '~/generated/graphql';
 import { isDefined } from '~/utils/isDefined';
-import { useSearchParams } from 'react-router-dom';
+import { currentUserState } from '@/auth/states/currentUserState';
+import { SignInUpWorkspaceScopeFormEffect } from '@/auth/sign-in-up/components/SignInUpWorkspaceScopeFormEffect';
 
 const StyledContentContainer = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing(8)};
@@ -31,6 +30,7 @@ export const Invite = () => {
 
   const { form } = useSignInUpForm();
   const currentWorkspace = useRecoilValue(currentWorkspaceState);
+  const currentUser = useRecoilValue(currentUserState);
   const [addUserToWorkspace] = useAddUserToWorkspaceMutation();
   const [addUserToWorkspaceByInviteToken] =
     useAddUserToWorkspaceByInviteTokenMutation();
@@ -77,10 +77,10 @@ export const Invite = () => {
   return (
     <>
       <AnimatedEaseIn>
-        <Logo workspaceLogo={workspaceFromInviteHash?.logo} />
+        <Logo secondaryLogo={workspaceFromInviteHash?.logo} />
       </AnimatedEaseIn>
       <Title animate>{title}</Title>
-      {isDefined(currentWorkspace) ? (
+      {isDefined(currentUser) ? (
         <>
           <StyledContentContainer>
             <MainButton
@@ -91,28 +91,13 @@ export const Invite = () => {
               fullWidth
             />
           </StyledContentContainer>
-          <FooterNote>
-            By using Twenty, you agree to the{' '}
-            <a
-              href="https://twenty.com/legal/terms"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Terms of Service
-            </a>{' '}
-            and{' '}
-            <a
-              href="https://twenty.com/legal/privacy"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Privacy Policy
-            </a>
-            .
-          </FooterNote>
+          <FooterNote />
         </>
       ) : (
-        <SignInUpForm />
+        <>
+          <SignInUpWorkspaceScopeFormEffect />
+          <SignInUpWorkspaceScopeForm />
+        </>
       )}
     </>
   );

@@ -5,9 +5,6 @@ import { NavigationDrawerSectionForObjectMetadataItems } from '@/object-metadata
 import { NavigationDrawerSectionForObjectMetadataItemsSkeletonLoader } from '@/object-metadata/components/NavigationDrawerSectionForObjectMetadataItemsSkeletonLoader';
 import { useFilteredObjectMetadataItems } from '@/object-metadata/hooks/useFilteredObjectMetadataItems';
 import { useIsPrefetchLoading } from '@/prefetch/hooks/useIsPrefetchLoading';
-import { usePrefetchedData } from '@/prefetch/hooks/usePrefetchedData';
-import { PrefetchKey } from '@/prefetch/types/PrefetchKey';
-import { View } from '@/views/types/View';
 
 export const NavigationDrawerOpenedSection = () => {
   const { activeObjectMetadataItems } = useFilteredObjectMetadataItems();
@@ -15,20 +12,24 @@ export const NavigationDrawerOpenedSection = () => {
     (item) => !item.isRemote,
   );
 
-  const { records: views } = usePrefetchedData<View>(PrefetchKey.AllViews);
   const loading = useIsPrefetchLoading();
-
-  const currentObjectNamePlural = useParams().objectNamePlural;
 
   const { activeObjectMetadataItems: workspaceFavoritesObjectMetadataItems } =
     useFilteredObjectMetadataItemsForWorkspaceFavorites();
 
-  if (!currentObjectNamePlural) {
+  const {
+    objectNamePlural: currentObjectNamePlural,
+    objectNameSingular: currentObjectNameSingular,
+  } = useParams();
+
+  if (!currentObjectNamePlural && !currentObjectNameSingular) {
     return;
   }
 
   const objectMetadataItem = filteredActiveObjectMetadataItems.find(
-    (item) => item.namePlural === currentObjectNamePlural,
+    (item) =>
+      item.namePlural === currentObjectNamePlural ||
+      item.nameSingular === currentObjectNameSingular,
   );
 
   if (!objectMetadataItem) {
@@ -49,7 +50,6 @@ export const NavigationDrawerOpenedSection = () => {
       <NavigationDrawerSectionForObjectMetadataItems
         sectionTitle={'Opened'}
         objectMetadataItems={[objectMetadataItem]}
-        views={views}
         isRemote={false}
       />
     )

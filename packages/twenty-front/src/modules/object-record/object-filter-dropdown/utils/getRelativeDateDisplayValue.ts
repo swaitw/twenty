@@ -1,9 +1,9 @@
 import {
   VariableDateViewFilterValueDirection,
   VariableDateViewFilterValueUnit,
-} from '@/views/utils/view-filter-value/resolveDateViewFilterValue';
+} from '@/views/view-filter-value/utils/resolveDateViewFilterValue';
 import { plural } from 'pluralize';
-import { capitalize } from '~/utils/string/capitalize';
+import { capitalize } from 'twenty-shared';
 export const getRelativeDateDisplayValue = (
   relativeDate: {
     direction: VariableDateViewFilterValueDirection;

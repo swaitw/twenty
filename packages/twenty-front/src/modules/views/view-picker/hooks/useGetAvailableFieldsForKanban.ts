@@ -1,13 +1,14 @@
 import { useCallback } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
 
 import { objectMetadataItemsState } from '@/object-metadata/states/objectMetadataItemsState';
-import { getObjectSlug } from '@/object-metadata/utils/getObjectSlug';
+import { SettingsPath } from '@/types/SettingsPath';
 import { navigationMemorizedUrlState } from '@/ui/navigation/states/navigationMemorizedUrlState';
 import { useRecoilComponentValueV2 } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValueV2';
 import { viewObjectMetadataIdComponentState } from '@/views/states/viewObjectMetadataIdComponentState';
 import { FieldMetadataType } from '~/generated-metadata/graphql';
+import { useNavigateSettings } from '~/hooks/useNavigateSettings';
 import { isDefined } from '~/utils/isDefined';
 
 export const useGetAvailableFieldsForKanban = () => {
@@ -29,19 +30,23 @@ export const useGetAvailableFieldsForKanban = () => {
       (field) => field.type === FieldMetadataType.Select,
     ) ?? [];
 
-  const navigate = useNavigate();
+  const navigate = useNavigateSettings();
 
   const navigateToSelectSettings = useCallback(() => {
     setNavigationMemorizedUrl(location.pathname + location.search);
 
     if (isDefined(objectMetadataItem?.namePlural)) {
       navigate(
-        `/settings/objects/${getObjectSlug(
-          objectMetadataItem,
-        )}/new-field/configure?fieldType=${FieldMetadataType.Select}`,
+        SettingsPath.ObjectNewFieldConfigure,
+        {
+          objectNamePlural: objectMetadataItem.namePlural,
+        },
+        {
+          fieldType: FieldMetadataType.Select,
+        },
       );
     } else {
-      navigate(`/settings/objects`);
+      navigate(SettingsPath.Objects);
     }
   }, [
     setNavigationMemorizedUrl,

@@ -1,23 +1,19 @@
-import { useCallback } from 'react';
-import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import styled from '@emotion/styled';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useSetRecoilState } from 'recoil';
+import { useCallback } from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { Key } from 'ts-key-enum';
-import { H2Title } from 'twenty-ui';
+import { H2Title, Loader, MainButton } from 'twenty-ui';
 import { z } from 'zod';
 
 import { SubTitle } from '@/auth/components/SubTitle';
 import { Title } from '@/auth/components/Title';
-import { isCurrentUserLoadedState } from '@/auth/states/isCurrentUserLoadingState';
-import { FIND_MANY_OBJECT_METADATA_ITEMS } from '@/object-metadata/graphql/queries';
-import { useApolloMetadataClient } from '@/object-metadata/hooks/useApolloMetadataClient';
+import { useAuth } from '@/auth/hooks/useAuth';
 import { useOnboardingStatus } from '@/onboarding/hooks/useOnboardingStatus';
+import { useSetNextOnboardingStatus } from '@/onboarding/hooks/useSetNextOnboardingStatus';
 import { WorkspaceLogoUploader } from '@/settings/workspace/components/WorkspaceLogoUploader';
-import { Loader } from '@/ui/feedback/loader/components/Loader';
 import { SnackBarVariant } from '@/ui/feedback/snack-bar-manager/components/SnackBar';
 import { useSnackBar } from '@/ui/feedback/snack-bar-manager/hooks/useSnackBar';
-import { MainButton } from '@/ui/input/button/components/MainButton';
 import { TextInputV2 } from '@/ui/input/components/TextInputV2';
 import {
   OnboardingStatus,
@@ -49,10 +45,10 @@ type Form = z.infer<typeof validationSchema>;
 export const CreateWorkspace = () => {
   const { enqueueSnackBar } = useSnackBar();
   const onboardingStatus = useOnboardingStatus();
+  const setNextOnboardingStatus = useSetNextOnboardingStatus();
 
+  const { loadCurrentUser } = useAuth();
   const [activateWorkspace] = useActivateWorkspaceMutation();
-  const apolloMetadataClient = useApolloMetadataClient();
-  const setIsCurrentUserLoaded = useSetRecoilState(isCurrentUserLoadedState);
 
   // Form
   const {
@@ -77,15 +73,12 @@ export const CreateWorkspace = () => {
             },
           },
         });
-        setIsCurrentUserLoaded(false);
-
-        await apolloMetadataClient?.refetchQueries({
-          include: [FIND_MANY_OBJECT_METADATA_ITEMS],
-        });
 
         if (isDefined(result.errors)) {
           throw result.errors ?? new Error('Unknown error');
         }
+        await loadCurrentUser();
+        setNextOnboardingStatus();
       } catch (error: any) {
         enqueueSnackBar(error?.message, {
           variant: SnackBarVariant.Error,
@@ -94,9 +87,9 @@ export const CreateWorkspace = () => {
     },
     [
       activateWorkspace,
-      setIsCurrentUserLoaded,
-      apolloMetadataClient,
       enqueueSnackBar,
+      loadCurrentUser,
+      setNextOnboardingStatus,
     ],
   );
 

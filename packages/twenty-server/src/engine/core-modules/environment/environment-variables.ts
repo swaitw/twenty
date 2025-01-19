@@ -1,4 +1,4 @@
-import { LogLevel } from '@nestjs/common';
+import { LogLevel, Logger } from '@nestjs/common';
 
 import { plainToClass } from 'class-transformer';
 import {
@@ -73,7 +73,13 @@ export class EnvironmentVariables {
   @CastToPositiveNumber()
   @IsOptional()
   @ValidateIf((env) => env.IS_BILLING_ENABLED === true)
-  BILLING_FREE_TRIAL_DURATION_IN_DAYS = 7;
+  BILLING_FREE_TRIAL_WITH_CREDIT_CARD_DURATION_IN_DAYS = 30;
+
+  @IsNumber()
+  @CastToPositiveNumber()
+  @IsOptional()
+  @ValidateIf((env) => env.IS_BILLING_ENABLED === true)
+  BILLING_FREE_TRIAL_WITHOUT_CREDIT_CARD_DURATION_IN_DAYS = 7;
 
   @IsString()
   @ValidateIf((env) => env.IS_BILLING_ENABLED === true)
@@ -95,7 +101,15 @@ export class EnvironmentVariables {
 
   @IsString()
   @ValidateIf((env) => env.ANALYTICS_ENABLED)
-  TINYBIRD_TOKEN: string;
+  TINYBIRD_INGEST_TOKEN: string;
+
+  @IsString()
+  @ValidateIf((env) => env.ANALYTICS_ENABLED)
+  TINYBIRD_WORKSPACE_UUID: string;
+
+  @IsString()
+  @ValidateIf((env) => env.ANALYTICS_ENABLED)
+  TINYBIRD_GENERATE_JWT_TOKEN: string;
 
   @CastToPositiveNumber()
   @IsNumber()
@@ -108,6 +122,7 @@ export class EnvironmentVariables {
     protocols: ['postgres'],
     require_tld: false,
     allow_underscores: true,
+    require_host: false,
   })
   PG_DATABASE_URL: string;
 
@@ -117,15 +132,31 @@ export class EnvironmentVariables {
   PG_SSL_ALLOW_SELF_SIGNED = false;
 
   // Frontend URL
-  @IsUrl({ require_tld: false })
-  FRONT_BASE_URL: string;
-
-  // Server URL
-  @IsUrl({ require_tld: false })
+  @IsString()
   @IsOptional()
-  SERVER_URL: string;
+  FRONT_DOMAIN?: string;
 
-  // Json Web Token
+  @IsString()
+  @ValidateIf((env) => env.IS_MULTIWORKSPACE_ENABLED)
+  DEFAULT_SUBDOMAIN = 'app';
+
+  @IsString()
+  @IsOptional()
+  FRONT_PROTOCOL?: 'http' | 'https' = 'http';
+
+  @CastToPositiveNumber()
+  @IsNumber()
+  @IsOptional()
+  FRONT_PORT?: number;
+
+  @IsUrl({ require_tld: false, require_protocol: true })
+  @IsOptional()
+  SERVER_URL = 'http://localhost:3000';
+
+  @IsString()
+  APP_SECRET: string;
+
+  @IsOptional()
   @IsString()
   ACCESS_TOKEN_SECRET: string;
 
@@ -133,10 +164,6 @@ export class EnvironmentVariables {
   @IsOptional()
   ACCESS_TOKEN_EXPIRES_IN = '30m';
 
-  @IsString()
-  REFRESH_TOKEN_SECRET: string;
-
-  @IsDuration()
   @IsOptional()
   REFRESH_TOKEN_EXPIRES_IN = '60d';
 
@@ -144,16 +171,9 @@ export class EnvironmentVariables {
   @IsOptional()
   REFRESH_TOKEN_COOL_DOWN = '1m';
 
-  @IsString()
-  LOGIN_TOKEN_SECRET = '30m';
-
   @IsDuration()
   @IsOptional()
   LOGIN_TOKEN_EXPIRES_IN = '15m';
-
-  @IsString()
-  @IsOptional()
-  FILE_TOKEN_SECRET = 'random_string';
 
   @IsDuration()
   @IsOptional()
@@ -164,10 +184,6 @@ export class EnvironmentVariables {
   INVITATION_TOKEN_EXPIRES_IN = '30d';
 
   // Auth
-  @IsUrl({ require_tld: false })
-  @IsOptional()
-  FRONT_AUTH_CALLBACK_URL: string;
-
   @CastToBoolean()
   @IsOptional()
   @IsBoolean()
@@ -196,9 +212,13 @@ export class EnvironmentVariables {
   @ValidateIf((env) => env.AUTH_MICROSOFT_ENABLED)
   AUTH_MICROSOFT_CLIENT_SECRET: string;
 
-  @IsUrl({ require_tld: false })
+  @IsUrl({ require_tld: false, require_protocol: true })
   @ValidateIf((env) => env.AUTH_MICROSOFT_ENABLED)
   AUTH_MICROSOFT_CALLBACK_URL: string;
+
+  @IsUrl({ require_tld: false, require_protocol: true })
+  @ValidateIf((env) => env.AUTH_MICROSOFT_ENABLED)
+  AUTH_MICROSOFT_APIS_CALLBACK_URL: string;
 
   @CastToBoolean()
   @IsOptional()
@@ -213,9 +233,18 @@ export class EnvironmentVariables {
   @ValidateIf((env) => env.AUTH_GOOGLE_ENABLED)
   AUTH_GOOGLE_CLIENT_SECRET: string;
 
-  @IsUrl({ require_tld: false })
+  @IsUrl({ require_tld: false, require_protocol: true })
   @ValidateIf((env) => env.AUTH_GOOGLE_ENABLED)
   AUTH_GOOGLE_CALLBACK_URL: string;
+
+  @IsString()
+  @IsOptional()
+  ENTERPRISE_KEY: string;
+
+  @CastToBoolean()
+  @IsOptional()
+  @IsBoolean()
+  IS_MULTIWORKSPACE_ENABLED = false;
 
   // Custom Code Engine
   @IsEnum(ServerlessDriverType)
@@ -353,11 +382,6 @@ export class EnvironmentVariables {
   @ValidateIf((env) => env.WORKSPACE_INACTIVE_DAYS_BEFORE_NOTIFICATION > 0)
   WORKSPACE_INACTIVE_DAYS_BEFORE_DELETION = 60;
 
-  @CastToBoolean()
-  @IsOptional()
-  @IsBoolean()
-  IS_SIGN_UP_DISABLED = false;
-
   @IsEnum(CaptchaDriverType)
   @IsOptional()
   CAPTCHA_DRIVER?: CaptchaDriverType;
@@ -375,16 +399,18 @@ export class EnvironmentVariables {
   @IsNumber()
   MUTATION_MAXIMUM_AFFECTED_RECORDS = 100;
 
-  REDIS_HOST = '127.0.0.1';
-
-  @CastToPositiveNumber()
-  REDIS_PORT = 6379;
-
-  REDIS_USERNAME: string;
-
-  REDIS_PASSWORD: string;
-
-  API_TOKEN_EXPIRES_IN = '100y';
+  @IsOptional()
+  @ValidateIf(
+    (env) =>
+      env.CACHE_STORAGE_TYPE === CacheStorageType.Redis ||
+      env.MESSAGE_QUEUE_TYPE === MessageQueueDriverType.BullMQ,
+  )
+  @IsUrl({
+    protocols: ['redis'],
+    require_tld: false,
+    allow_underscores: true,
+  })
+  REDIS_URL: string;
 
   SHORT_TERM_TOKEN_EXPIRES_IN = '5m';
 
@@ -392,6 +418,15 @@ export class EnvironmentVariables {
   MESSAGING_PROVIDER_GMAIL_ENABLED = false;
 
   MESSAGE_QUEUE_TYPE: string = MessageQueueDriverType.BullMQ;
+
+  @CastToBoolean()
+  @IsOptional()
+  @IsBoolean()
+  IS_EMAIL_VERIFICATION_REQUIRED = false;
+
+  @IsDuration()
+  @IsOptional()
+  EMAIL_VERIFICATION_TOKEN_EXPIRES_IN = '1h';
 
   EMAIL_FROM_ADDRESS = 'noreply@yourdomain.com';
 
@@ -431,6 +466,10 @@ export class EnvironmentVariables {
   @CastToPositiveNumber()
   CACHE_STORAGE_TTL: number = 3600 * 24 * 7;
 
+  @IsString()
+  @IsOptional()
+  SESSION_STORE_SECRET = 'replace_me_with_a_random_string_session';
+
   @CastToBoolean()
   CALENDAR_PROVIDER_GOOGLE_ENABLED = false;
 
@@ -444,6 +483,22 @@ export class EnvironmentVariables {
   // milliseconds
   @CastToPositiveNumber()
   SERVERLESS_FUNCTION_EXEC_THROTTLE_TTL = 1000;
+
+  @CastToPositiveNumber()
+  WORKFLOW_EXEC_THROTTLE_LIMIT = 10;
+
+  // milliseconds
+  @CastToPositiveNumber()
+  WORKFLOW_EXEC_THROTTLE_TTL = 1000;
+
+  // SSL
+  @IsString()
+  @IsOptional()
+  SSL_KEY_PATH: string;
+
+  @IsString()
+  @IsOptional()
+  SSL_CERT_PATH: string;
 }
 
 export const validate = (
@@ -451,7 +506,19 @@ export const validate = (
 ): EnvironmentVariables => {
   const validatedConfig = plainToClass(EnvironmentVariables, config);
 
-  const errors = validateSync(validatedConfig);
+  const errors = validateSync(validatedConfig, { strictGroups: true });
+
+  const warnings = validateSync(validatedConfig, { groups: ['warning'] });
+
+  if (warnings.length > 0) {
+    warnings.forEach((warning) => {
+      if (warning.constraints && warning.property) {
+        Object.values(warning.constraints).forEach((message) => {
+          Logger.warn(message);
+        });
+      }
+    });
+  }
 
   assert(!errors.length, errors.toString());
 

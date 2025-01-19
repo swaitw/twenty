@@ -19,6 +19,11 @@ export const computeWhereConditionParts = (
   const uuid = Math.random().toString(36).slice(2, 7);
 
   switch (operator) {
+    case 'isEmptyArray':
+      return {
+        sql: `"${objectNameSingular}"."${key}" = '{}'`,
+        params: {},
+      };
     case 'eq':
       return {
         sql: `"${objectNameSingular}"."${key}" = :${key}${uuid}`,
@@ -61,24 +66,45 @@ export const computeWhereConditionParts = (
       };
     case 'like':
       return {
-        sql: `"${objectNameSingular}"."${key}" LIKE :${key}${uuid}`,
+        sql: `"${objectNameSingular}"."${key}"::text LIKE :${key}${uuid}`,
         params: { [`${key}${uuid}`]: `${value}` },
       };
     case 'ilike':
       return {
-        sql: `"${objectNameSingular}"."${key}" ILIKE :${key}${uuid}`,
+        sql: `"${objectNameSingular}"."${key}"::text ILIKE :${key}${uuid}`,
         params: { [`${key}${uuid}`]: `${value}` },
       };
     case 'startsWith':
       return {
-        sql: `"${objectNameSingular}"."${key}" LIKE :${key}${uuid}`,
+        sql: `"${objectNameSingular}"."${key}"::text LIKE :${key}${uuid}`,
         params: { [`${key}${uuid}`]: `${value}` },
       };
     case 'endsWith':
       return {
-        sql: `"${objectNameSingular}"."${key}" LIKE :${key}${uuid}`,
+        sql: `"${objectNameSingular}"."${key}"::text LIKE :${key}${uuid}`,
         params: { [`${key}${uuid}`]: `${value}` },
       };
+    case 'contains':
+      return {
+        sql: `"${objectNameSingular}"."${key}" @> ARRAY[:...${key}${uuid}]`,
+        params: { [`${key}${uuid}`]: value },
+      };
+    case 'notContains':
+      return {
+        sql: `NOT ("${objectNameSingular}"."${key}"::text[] && ARRAY[:...${key}${uuid}]::text[])`,
+        params: { [`${key}${uuid}`]: value },
+      };
+    case 'containsAny':
+      return {
+        sql: `"${objectNameSingular}"."${key}"::text[] && ARRAY[:...${key}${uuid}]::text[]`,
+        params: { [`${key}${uuid}`]: value },
+      };
+    case 'containsIlike':
+      return {
+        sql: `EXISTS (SELECT 1 FROM unnest("${objectNameSingular}"."${key}") AS elem WHERE elem ILIKE :${key}${uuid})`,
+        params: { [`${key}${uuid}`]: value },
+      };
+
     default:
       throw new GraphqlQueryRunnerException(
         `Operator "${operator}" is not supported`,

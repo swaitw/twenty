@@ -1,4 +1,4 @@
-import { FilterDefinition } from '@/object-record/object-filter-dropdown/types/FilterDefinition';
+import { RecordFilterDefinition } from '@/object-record/record-filter/types/RecordFilterDefinition';
 import { ViewFilterOperand } from './ViewFilterOperand';
 
 export type ViewFilter = {
@@ -12,5 +12,7 @@ export type ViewFilter = {
   createdAt?: string;
   updatedAt?: string;
   viewId?: string;
-  definition?: FilterDefinition;
+  viewFilterGroupId?: string;
+  positionInViewFilterGroup?: number | null;
+  definition?: RecordFilterDefinition;
 };

@@ -19,10 +19,9 @@ const StyledCalenderContainer = styled.div`
 `;
 
 export const SettingsAccountsCalendarChannelsContainer = () => {
-  const { activeTabIdState } = useTabList(
+  const { activeTabId } = useTabList(
     SETTINGS_ACCOUNT_CALENDAR_CHANNELS_TAB_LIST_COMPONENT_ID,
   );
-  const activeTabId = useRecoilValue(activeTabIdState);
   const currentWorkspaceMember = useRecoilValue(currentWorkspaceMemberState);
 
   const { records: accounts } = useFindManyRecords<ConnectedAccount>({
@@ -64,7 +63,9 @@ export const SettingsAccountsCalendarChannelsContainer = () => {
       {tabs.length > 1 && (
         <StyledCalenderContainer>
           <TabList
-            tabListId={SETTINGS_ACCOUNT_CALENDAR_CHANNELS_TAB_LIST_COMPONENT_ID}
+            tabListInstanceId={
+              SETTINGS_ACCOUNT_CALENDAR_CHANNELS_TAB_LIST_COMPONENT_ID
+            }
             tabs={tabs}
           />
         </StyledCalenderContainer>

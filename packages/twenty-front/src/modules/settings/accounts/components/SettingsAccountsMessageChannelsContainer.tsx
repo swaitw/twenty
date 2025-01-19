@@ -18,10 +18,9 @@ const StyledMessageContainer = styled.div`
 `;
 
 export const SettingsAccountsMessageChannelsContainer = () => {
-  const { activeTabIdState } = useTabList(
+  const { activeTabId } = useTabList(
     SETTINGS_ACCOUNT_MESSAGE_CHANNELS_TAB_LIST_COMPONENT_ID,
   );
-  const activeTabId = useRecoilValue(activeTabIdState);
   const currentWorkspaceMember = useRecoilValue(currentWorkspaceMemberState);
 
   const { records: accounts } = useFindManyRecords<ConnectedAccount>({
@@ -63,7 +62,9 @@ export const SettingsAccountsMessageChannelsContainer = () => {
       {tabs.length > 1 && (
         <StyledMessageContainer>
           <TabList
-            tabListId={SETTINGS_ACCOUNT_MESSAGE_CHANNELS_TAB_LIST_COMPONENT_ID}
+            tabListInstanceId={
+              SETTINGS_ACCOUNT_MESSAGE_CHANNELS_TAB_LIST_COMPONENT_ID
+            }
             tabs={tabs}
           />
         </StyledMessageContainer>

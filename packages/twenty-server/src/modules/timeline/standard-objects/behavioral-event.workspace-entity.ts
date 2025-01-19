@@ -1,5 +1,6 @@
+import { FieldMetadataType } from 'twenty-shared';
+
 import { FeatureFlagKey } from 'src/engine/core-modules/feature-flag/enums/feature-flag-key.enum';
-import { FieldMetadataType } from 'src/engine/metadata-modules/field-metadata/field-metadata.entity';
 import { BaseWorkspaceEntity } from 'src/engine/twenty-orm/base.workspace-entity';
 import { WorkspaceEntity } from 'src/engine/twenty-orm/decorators/workspace-entity.decorator';
 import { WorkspaceField } from 'src/engine/twenty-orm/decorators/workspace-field.decorator';
@@ -7,6 +8,7 @@ import { WorkspaceGate } from 'src/engine/twenty-orm/decorators/workspace-gate.d
 import { WorkspaceIsNullable } from 'src/engine/twenty-orm/decorators/workspace-is-nullable.decorator';
 import { WorkspaceIsSystem } from 'src/engine/twenty-orm/decorators/workspace-is-system.decorator';
 import { BEHAVIORAL_EVENT_STANDARD_FIELD_IDS } from 'src/engine/workspace-manager/workspace-sync-metadata/constants/standard-field-ids';
+import { STANDARD_OBJECT_ICONS } from 'src/engine/workspace-manager/workspace-sync-metadata/constants/standard-object-icons';
 import { STANDARD_OBJECT_IDS } from 'src/engine/workspace-manager/workspace-sync-metadata/constants/standard-object-ids';
 
 @WorkspaceEntity({
@@ -15,7 +17,7 @@ import { STANDARD_OBJECT_IDS } from 'src/engine/workspace-manager/workspace-sync
   labelSingular: 'Behavioral Event',
   labelPlural: 'Behavioral Events',
   description: 'An event related to user behavior',
-  icon: 'IconIconTimelineEvent',
+  icon: STANDARD_OBJECT_ICONS.behavioralEvent,
 })
 @WorkspaceIsSystem()
 @WorkspaceGate({

@@ -1,4 +1,4 @@
-import { FilterDefinition } from '@/object-record/object-filter-dropdown/types/FilterDefinition';
+import { RecordFilterDefinition } from '@/object-record/record-filter/types/RecordFilterDefinition';
 import {
   FieldMetadataType,
   RelationDefinitionType,
@@ -8,10 +8,12 @@ import { ObjectMetadataItem } from '../types/ObjectMetadataItem';
 
 export const formatFieldMetadataItemsAsFilterDefinitions = ({
   fields,
+  isJsonFilterEnabled,
 }: {
   fields: Array<ObjectMetadataItem['fields'][0]>;
-}): FilterDefinition[] =>
-  fields.reduce((acc, field) => {
+  isJsonFilterEnabled: boolean;
+}): RecordFilterDefinition[] => {
+  return fields.reduce((acc, field) => {
     if (
       field.type === FieldMetadataType.Relation &&
       field.relationDefinition?.direction !==
@@ -23,6 +25,7 @@ export const formatFieldMetadataItemsAsFilterDefinitions = ({
 
     if (
       ![
+        FieldMetadataType.Boolean,
         FieldMetadataType.DateTime,
         FieldMetadataType.Date,
         FieldMetadataType.Text,
@@ -33,23 +36,27 @@ export const formatFieldMetadataItemsAsFilterDefinitions = ({
         FieldMetadataType.Address,
         FieldMetadataType.Relation,
         FieldMetadataType.Select,
+        FieldMetadataType.MultiSelect,
         FieldMetadataType.Currency,
         FieldMetadataType.Rating,
         FieldMetadataType.Actor,
         FieldMetadataType.Phones,
+        FieldMetadataType.Array,
+        ...(isJsonFilterEnabled ? [FieldMetadataType.RawJson] : []),
       ].includes(field.type)
     ) {
       return acc;
     }
 
     return [...acc, formatFieldMetadataItemAsFilterDefinition({ field })];
-  }, [] as FilterDefinition[]);
+  }, [] as RecordFilterDefinition[]);
+};
 
 export const formatFieldMetadataItemAsFilterDefinition = ({
   field,
 }: {
   field: ObjectMetadataItem['fields'][0];
-}): FilterDefinition => ({
+}): RecordFilterDefinition => ({
   fieldMetadataId: field.id,
   label: field.label,
   iconName: field.icon ?? 'Icon123',
@@ -92,6 +99,10 @@ export const getFilterTypeFromFieldType = (fieldType: FieldMetadataType) => {
       return 'ACTOR';
     case FieldMetadataType.Array:
       return 'ARRAY';
+    case FieldMetadataType.RawJson:
+      return 'RAW_JSON';
+    case FieldMetadataType.Boolean:
+      return 'BOOLEAN';
     default:
       return 'TEXT';
   }

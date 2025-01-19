@@ -1,12 +1,15 @@
 import styled from '@emotion/styled';
 import { ReactNode, useMemo } from 'react';
 
+import { useObjectNameSingularFromPlural } from '@/object-metadata/hooks/useObjectNameSingularFromPlural';
 import { AddObjectFilterFromDetailsButton } from '@/object-record/object-filter-dropdown/components/AddObjectFilterFromDetailsButton';
-import { ObjectFilterDropdownScope } from '@/object-record/object-filter-dropdown/scopes/ObjectFilterDropdownScope';
-import { Filter } from '@/object-record/object-filter-dropdown/types/Filter';
+import { ObjectFilterDropdownComponentInstanceContext } from '@/object-record/object-filter-dropdown/states/contexts/ObjectFilterDropdownComponentInstanceContext';
+import { RecordFilter } from '@/object-record/record-filter/types/RecordFilter';
+import { useHandleToggleTrashColumnFilter } from '@/object-record/record-index/hooks/useHandleToggleTrashColumnFilter';
 import { DropdownScope } from '@/ui/layout/dropdown/scopes/DropdownScope';
 import { useRecoilComponentFamilyValueV2 } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentFamilyValueV2';
 import { useRecoilComponentValueV2 } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValueV2';
+import { AdvancedFilterDropdownButton } from '@/views/components/AdvancedFilterDropdownButton';
 import { EditableFilterDropdownButton } from '@/views/components/EditableFilterDropdownButton';
 import { EditableSortChip } from '@/views/components/EditableSortChip';
 import { ViewBarFilterEffect } from '@/views/components/ViewBarFilterEffect';
@@ -27,6 +30,7 @@ export type ViewBarDetailsProps = {
   rightComponent?: ReactNode;
   filterDropdownId?: string;
   viewBarId: string;
+  objectNamePlural: string;
 };
 
 const StyledBar = styled.div`
@@ -100,6 +104,7 @@ export const ViewBarDetails = ({
   rightComponent,
   filterDropdownId,
   viewBarId,
+  objectNamePlural,
 }: ViewBarDetailsProps) => {
   const { currentViewWithCombinedFiltersAndSorts } = useGetCurrentView();
 
@@ -124,6 +129,13 @@ export const ViewBarDetails = ({
     availableSortDefinitionsComponentState,
   );
 
+  const { objectNameSingular } = useObjectNameSingularFromPlural({
+    objectNamePlural: objectNamePlural,
+  });
+  const { toggleSoftDeleteFilterState } = useHandleToggleTrashColumnFilter({
+    objectNameSingular: objectNameSingular,
+    viewBarId: viewBarId,
+  });
   const { resetUnsavedViewStates } = useResetUnsavedViewStates();
   const canResetView = canPersistView && !hasFiltersQueryParams;
 
@@ -137,11 +149,16 @@ export const ViewBarDetails = ({
 
     const otherViewFilters =
       currentViewWithCombinedFiltersAndSorts.viewFilters.filter(
-        (viewFilter) => viewFilter.variant && viewFilter.variant !== 'default',
+        (viewFilter) =>
+          viewFilter.variant &&
+          viewFilter.variant !== 'default' &&
+          !viewFilter.viewFilterGroupId,
       );
     const defaultViewFilters =
       currentViewWithCombinedFiltersAndSorts.viewFilters.filter(
-        (viewFilter) => !viewFilter.variant || viewFilter.variant === 'default',
+        (viewFilter) =>
+          (!viewFilter.variant || viewFilter.variant === 'default') &&
+          !viewFilter.viewFilterGroupId,
       );
 
     return {
@@ -153,6 +170,7 @@ export const ViewBarDetails = ({
   const handleCancelClick = () => {
     if (isDefined(viewId)) {
       resetUnsavedViewStates(viewId);
+      toggleSoftDeleteFilterState(false);
     }
   };
 
@@ -166,6 +184,10 @@ export const ViewBarDetails = ({
     return null;
   }
 
+  const showAdvancedFilterDropdownButton =
+    currentViewWithCombinedFiltersAndSorts?.viewFilterGroups &&
+    currentViewWithCombinedFiltersAndSorts?.viewFilterGroups.length > 0;
+
   return (
     <StyledBar>
       <StyledFilterContainer>
@@ -177,7 +199,7 @@ export const ViewBarDetails = ({
               // Why key defition is already present in the Filter type and added on the fly here with mapViewFiltersToFilters ?
               // Also as filter is spread into viewFilter, definition is present
               // FixMe: Ugly hack to make it work
-              viewFilter={viewFilter as unknown as Filter}
+              viewFilter={viewFilter as unknown as RecordFilter}
               viewBarId={viewBarId}
             />
           ))}
@@ -199,13 +221,14 @@ export const ViewBarDetails = ({
                 <StyledSeperator />
               </StyledSeperatorContainer>
             )}
+          {showAdvancedFilterDropdownButton && <AdvancedFilterDropdownButton />}
           {mapViewFiltersToFilters(
             defaultViewFilters,
             availableFilterDefinitions,
           ).map((viewFilter) => (
-            <ObjectFilterDropdownScope
+            <ObjectFilterDropdownComponentInstanceContext.Provider
               key={viewFilter.id}
-              filterScopeId={viewFilter.id}
+              value={{ instanceId: viewFilter.id }}
             >
               <DropdownScope dropdownScopeId={viewFilter.id}>
                 <ViewBarFilterEffect filterDropdownId={viewFilter.id} />
@@ -217,7 +240,7 @@ export const ViewBarDetails = ({
                   viewFilterDropdownId={viewFilter.id}
                 />
               </DropdownScope>
-            </ObjectFilterDropdownScope>
+            </ObjectFilterDropdownComponentInstanceContext.Provider>
           ))}
         </StyledChipcontainer>
         {hasFilterButton && (

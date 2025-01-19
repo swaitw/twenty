@@ -1,23 +1,24 @@
 import styled from '@emotion/styled';
 import { DateTime } from 'luxon';
 import ReactDatePicker from 'react-datepicker';
-import { Key } from 'ts-key-enum';
-import { IconCalendarX, OVERLAY_BACKGROUND } from 'twenty-ui';
+import {
+  IconCalendarX,
+  MenuItemLeftContent,
+  StyledHoverableMenuItemBase,
+} from 'twenty-ui';
 
-import { DateTimeInput } from '@/ui/input/components/internal/date/components/DateTimeInput';
 import { useDropdown } from '@/ui/layout/dropdown/hooks/useDropdown';
-import { MenuItemLeftContent } from '@/ui/navigation/menu-item/internals/components/MenuItemLeftContent';
-import { StyledHoverableMenuItemBase } from '@/ui/navigation/menu-item/internals/components/StyledMenuItemBase';
 import { isDefined } from '~/utils/isDefined';
 
 import { AbsoluteDatePickerHeader } from '@/ui/input/components/internal/date/components/AbsoluteDatePickerHeader';
+import { DateTimeInput } from '@/ui/input/components/internal/date/components/DateTimeInput';
 import { RelativeDatePickerHeader } from '@/ui/input/components/internal/date/components/RelativeDatePickerHeader';
 import { getHighlightedDates } from '@/ui/input/components/internal/date/utils/getHighlightedDates';
 import { UserContext } from '@/users/contexts/UserContext';
 import {
   VariableDateViewFilterValueDirection,
   VariableDateViewFilterValueUnit,
-} from '@/views/utils/view-filter-value/resolveDateViewFilterValue';
+} from '@/views/view-filter-value/utils/resolveDateViewFilterValue';
 import { useContext } from 'react';
 import 'react-datepicker/dist/react-datepicker.css';
 
@@ -119,14 +120,11 @@ const StyledContainer = styled.div<{ calendarDisabled?: boolean }>`
 
   & .react-datepicker__month-dropdown,
   & .react-datepicker__year-dropdown {
-    border: ${({ theme }) => theme.border.color.light};
-    ${OVERLAY_BACKGROUND}
     overflow-y: scroll;
     top: ${({ theme }) => theme.spacing(2)};
   }
   & .react-datepicker__month-dropdown {
     left: ${({ theme }) => theme.spacing(2)};
-    width: 160px;
     height: 260px;
   }
 
@@ -272,8 +270,9 @@ const StyledButton = styled(MenuItemLeftContent)`
   justify-content: start;
 `;
 
-type InternalDatePickerProps = {
+type DateTimePickerProps = {
   isRelative?: boolean;
+  hideHeaderInput?: boolean;
   date: Date | null;
   relativeDate?: {
     direction: VariableDateViewFilterValueDirection;
@@ -284,7 +283,7 @@ type InternalDatePickerProps = {
     start: Date;
     end: Date;
   };
-  onMouseSelect?: (date: Date | null) => void;
+  onClose?: (date: Date | null) => void;
   onChange?: (date: Date | null) => void;
   onRelativeDateChange?: (
     relativeDate: {
@@ -301,21 +300,19 @@ type InternalDatePickerProps = {
   onClear?: () => void;
 };
 
-export const InternalDatePicker = ({
+export const DateTimePicker = ({
   date,
   onChange,
-  onMouseSelect,
-  onEnter,
-  onEscape,
+  onClose,
   clearable = true,
   isDateTimeInput,
-  keyboardEventsDisabled,
   onClear,
   isRelative,
   relativeDate,
   onRelativeDateChange,
   highlightedDateRange,
-}: InternalDatePickerProps) => {
+  hideHeaderInput,
+}: DateTimePickerProps) => {
   const internalDate = date ?? new Date();
 
   const { timeZone } = useContext(UserContext);
@@ -339,34 +336,9 @@ export const InternalDatePicker = ({
     closeDropdown();
   };
 
-  const handleMouseSelect = (newDate: Date) => {
+  const handleClose = (newDate: Date) => {
     closeDropdowns();
-    onMouseSelect?.(newDate);
-  };
-
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (isDefined(keyboardEventsDisabled) && keyboardEventsDisabled) {
-      return;
-    }
-
-    switch (event.key) {
-      case Key.Enter: {
-        event.stopPropagation();
-        event.preventDefault();
-
-        closeDropdowns();
-        onEnter?.(internalDate);
-        break;
-      }
-      case Key.Escape: {
-        event.stopPropagation();
-        event.preventDefault();
-
-        closeDropdowns();
-        onEscape?.(internalDate);
-        break;
-      }
-    }
+    onClose?.(newDate);
   };
 
   const handleChangeMonth = (month: number) => {
@@ -424,7 +396,7 @@ export const InternalDatePicker = ({
       })
       .toJSDate();
 
-    handleMouseSelect?.(dateParsed);
+    handleClose?.(dateParsed);
   };
 
   const dateWithoutTime = DateTime.fromJSDate(internalDate)
@@ -468,7 +440,7 @@ export const InternalDatePicker = ({
   const selectedDates = isRelative ? highlightedDates : [dateToUse];
 
   return (
-    <StyledContainer onKeyDown={handleKeyDown} calendarDisabled={isRelative}>
+    <StyledContainer calendarDisabled={isRelative}>
       <div className={clearable ? 'clearable ' : ''}>
         <ReactDatePicker
           open={true}
@@ -508,6 +480,7 @@ export const InternalDatePicker = ({
                 nextMonthButtonDisabled={nextMonthButtonDisabled}
                 isDateTimeInput={isDateTimeInput}
                 timeZone={timeZone}
+                hideInput={hideHeaderInput}
               />
             )
           }

@@ -1,22 +1,27 @@
 import { Meta, StoryObj } from '@storybook/react';
 
 import { TaskGroups } from '@/activities/tasks/components/TaskGroups';
+import { CoreObjectNamePlural } from '@/object-metadata/types/CoreObjectNamePlural';
+import { CoreObjectNameSingular } from '@/object-metadata/types/CoreObjectNameSingular';
 import { MultipleFiltersDropdownButton } from '@/object-record/object-filter-dropdown/components/MultipleFiltersDropdownButton';
-import { ObjectFilterDropdownScope } from '@/object-record/object-filter-dropdown/scopes/ObjectFilterDropdownScope';
 import { ObjectFilterDropdownComponentInstanceContext } from '@/object-record/object-filter-dropdown/states/contexts/ObjectFilterDropdownComponentInstanceContext';
-import { useRecordTableStates } from '@/object-record/record-table/hooks/internal/useRecordTableStates';
-import { RecordTableScopeInternalContext } from '@/object-record/record-table/scopes/scope-internal-context/RecordTableScopeInternalContext';
+import { RecordIndexContextProvider } from '@/object-record/record-index/contexts/RecordIndexContext';
+import { RecordTableComponentInstanceContext } from '@/object-record/record-table/states/context/RecordTableComponentInstanceContext';
+import { tableColumnsComponentState } from '@/object-record/record-table/states/tableColumnsComponentState';
 import { ColumnDefinition } from '@/object-record/record-table/types/ColumnDefinition';
 import { useSetRecoilComponentStateV2 } from '@/ui/utilities/state/component-state/hooks/useSetRecoilComponentStateV2';
 import { availableFilterDefinitionsComponentState } from '@/views/states/availableFilterDefinitionsComponentState';
 import { ViewComponentInstanceContext } from '@/views/states/contexts/ViewComponentInstanceContext';
 import { within } from '@storybook/test';
-import { useSetRecoilState } from 'recoil';
-import { ComponentDecorator } from 'twenty-ui';
+import {
+  ComponentDecorator,
+  getCanvasElementForDropdownTesting,
+} from 'twenty-ui';
 import { FieldMetadataType } from '~/generated/graphql';
 import { IconsProviderDecorator } from '~/testing/decorators/IconsProviderDecorator';
 import { ObjectMetadataItemsDecorator } from '~/testing/decorators/ObjectMetadataItemsDecorator';
 import { SnackBarDecorator } from '~/testing/decorators/SnackBarDecorator';
+import { generatedMockObjectMetadataItems } from '~/testing/mock-data/generatedMockObjectMetadataItems';
 
 const meta: Meta<typeof MultipleFiltersDropdownButton> = {
   title:
@@ -24,15 +29,19 @@ const meta: Meta<typeof MultipleFiltersDropdownButton> = {
   component: MultipleFiltersDropdownButton,
   decorators: [
     (Story) => {
+      const companyObjectMetadataItem = generatedMockObjectMetadataItems.find(
+        (item) => item.nameSingular === CoreObjectNameSingular.Company,
+      )!;
       const instanceId = 'entity-tasks-filter-scope';
       const setAvailableFilterDefinitions = useSetRecoilComponentStateV2(
         availableFilterDefinitionsComponentState,
         instanceId,
       );
 
-      const { tableColumnsState } = useRecordTableStates(instanceId);
-
-      const setTableColumns = useSetRecoilState(tableColumnsState);
+      const setTableColumns = useSetRecoilComponentStateV2(
+        tableColumnsComponentState,
+        instanceId,
+      );
 
       setTableColumns([
         {
@@ -88,19 +97,28 @@ const meta: Meta<typeof MultipleFiltersDropdownButton> = {
         },
       ]);
       return (
-        <ObjectFilterDropdownComponentInstanceContext.Provider
-          value={{ instanceId }}
+        <RecordIndexContextProvider
+          value={{
+            indexIdentifierUrl: () => '',
+            onIndexRecordsLoaded: () => {},
+            objectNamePlural: CoreObjectNamePlural.Company,
+            objectNameSingular: CoreObjectNameSingular.Company,
+            objectMetadataItem: companyObjectMetadataItem,
+            recordIndexId: instanceId,
+          }}
         >
-          <RecordTableScopeInternalContext.Provider
-            value={{ scopeId: instanceId, onColumnsChange: () => {} }}
+          <ObjectFilterDropdownComponentInstanceContext.Provider
+            value={{ instanceId }}
           >
-            <ViewComponentInstanceContext.Provider value={{ instanceId }}>
-              <ObjectFilterDropdownScope filterScopeId={instanceId}>
+            <RecordTableComponentInstanceContext.Provider
+              value={{ instanceId: instanceId, onColumnsChange: () => {} }}
+            >
+              <ViewComponentInstanceContext.Provider value={{ instanceId }}>
                 <Story />
-              </ObjectFilterDropdownScope>
-            </ViewComponentInstanceContext.Provider>
-          </RecordTableScopeInternalContext.Provider>
-        </ObjectFilterDropdownComponentInstanceContext.Provider>
+              </ViewComponentInstanceContext.Provider>
+            </RecordTableComponentInstanceContext.Provider>
+          </ObjectFilterDropdownComponentInstanceContext.Provider>
+        </RecordIndexContextProvider>
       );
     },
     ObjectMetadataItemsDecorator,
@@ -120,7 +138,7 @@ type Story = StoryObj<typeof TaskGroups>;
 
 export const Default: Story = {
   play: async () => {
-    const canvas = within(document.body);
+    const canvas = within(getCanvasElementForDropdownTesting());
 
     const filterButton = await canvas.findByText('Filter');
 
@@ -142,7 +160,7 @@ export const Default: Story = {
 
 export const Date: Story = {
   play: async () => {
-    const canvas = within(document.body);
+    const canvas = within(getCanvasElementForDropdownTesting());
 
     const filterButton = await canvas.findByText('Filter');
 
@@ -156,7 +174,7 @@ export const Date: Story = {
 
 export const Number: Story = {
   play: async () => {
-    const canvas = within(document.body);
+    const canvas = within(getCanvasElementForDropdownTesting());
 
     const filterButton = await canvas.findByText('Filter');
 

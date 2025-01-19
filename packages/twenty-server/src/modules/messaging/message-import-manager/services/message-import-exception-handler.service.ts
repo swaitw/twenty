@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 
 import { TwentyORMManager } from 'src/engine/twenty-orm/twenty-orm.manager';
-import { CALENDAR_THROTTLE_MAX_ATTEMPTS } from 'src/modules/calendar/calendar-event-import-manager/constants/calendar-throttle-max-attempts';
 import { MessageChannelSyncStatusService } from 'src/modules/messaging/common/services/message-channel-sync-status.service';
 import { MessageChannelWorkspaceEntity } from 'src/modules/messaging/common/standard-objects/message-channel.workspace-entity';
+import { MESSAGING_THROTTLE_MAX_ATTEMPTS } from 'src/modules/messaging/message-import-manager/constants/messaging-throttle-max-attempts';
 import {
   MessageImportDriverException,
   MessageImportDriverExceptionCode,
@@ -64,6 +64,13 @@ export class MessageImportExceptionHandlerService {
           workspaceId,
         );
         break;
+      case MessageImportDriverExceptionCode.SYNC_CURSOR_ERROR:
+        await this.handlePermanentException(
+          exception,
+          messageChannel,
+          workspaceId,
+        );
+        break;
       default:
         throw exception;
     }
@@ -77,7 +84,9 @@ export class MessageImportExceptionHandlerService {
     >,
     workspaceId: string,
   ): Promise<void> {
-    if (messageChannel.throttleFailureCount >= CALENDAR_THROTTLE_MAX_ATTEMPTS) {
+    if (
+      messageChannel.throttleFailureCount >= MESSAGING_THROTTLE_MAX_ATTEMPTS
+    ) {
       await this.messageChannelSyncStatusService.markAsFailedUnknownAndFlushMessagesToImport(
         [messageChannel.id],
         workspaceId,
@@ -143,6 +152,22 @@ export class MessageImportExceptionHandlerService {
 
     throw new MessageImportException(
       `Unknown error occurred while importing messages for message channel ${messageChannel.id} in workspace ${workspaceId}: ${exception.message}`,
+      MessageImportExceptionCode.UNKNOWN,
+    );
+  }
+
+  private async handlePermanentException(
+    exception: MessageImportDriverException,
+    messageChannel: Pick<MessageChannelWorkspaceEntity, 'id'>,
+    workspaceId: string,
+  ): Promise<void> {
+    await this.messageChannelSyncStatusService.markAsFailedUnknownAndFlushMessagesToImport(
+      [messageChannel.id],
+      workspaceId,
+    );
+
+    throw new MessageImportException(
+      `Permanent error occurred while importing messages for message channel ${messageChannel.id} in workspace ${workspaceId}: ${exception.message}`,
       MessageImportExceptionCode.UNKNOWN,
     );
   }

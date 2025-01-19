@@ -2,12 +2,9 @@ import { Injectable } from '@nestjs/common';
 
 import { Stream } from 'stream';
 
-import { addMilliseconds } from 'date-fns';
-import ms from 'ms';
-
-import { JwtWrapperService } from 'src/engine/core-modules/jwt/services/jwt-wrapper.service';
 import { EnvironmentService } from 'src/engine/core-modules/environment/environment.service';
 import { FileStorageService } from 'src/engine/core-modules/file-storage/file-storage.service';
+import { JwtWrapperService } from 'src/engine/core-modules/jwt/services/jwt-wrapper.service';
 
 @Injectable()
 export class FileService {
@@ -34,17 +31,18 @@ export class FileService {
     const fileTokenExpiresIn = this.environmentService.get(
       'FILE_TOKEN_EXPIRES_IN',
     );
-    const secret = this.environmentService.get('FILE_TOKEN_SECRET');
-
-    const expirationDate = addMilliseconds(new Date(), ms(fileTokenExpiresIn));
+    const secret = this.jwtWrapperService.generateAppSecret(
+      'FILE',
+      payloadToEncode.workspaceId,
+    );
 
     const signedPayload = this.jwtWrapperService.sign(
       {
-        expiration_date: expirationDate,
         ...payloadToEncode,
       },
       {
         secret,
+        expiresIn: fileTokenExpiresIn,
       },
     );
 

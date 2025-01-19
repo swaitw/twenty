@@ -1,29 +1,21 @@
-import styled from '@emotion/styled';
 import React, { useRef, useState } from 'react';
 import { Key } from 'ts-key-enum';
-import { IconCheck, IconPlus } from 'twenty-ui';
+import { IconCheck, IconPlus, LightIconButton, MenuItem } from 'twenty-ui';
 
-import { PhoneRecord } from '@/object-record/record-field/types/FieldMetadata';
-import { LightIconButton } from '@/ui/input/button/components/LightIconButton';
-import { DropdownMenu } from '@/ui/layout/dropdown/components/DropdownMenu';
 import {
-  DropdownMenuInput,
-  DropdownMenuInputProps,
-} from '@/ui/layout/dropdown/components/DropdownMenuInput';
+  MultiItemBaseInput,
+  MultiItemBaseInputProps,
+} from '@/object-record/record-field/meta-types/input/components/MultiItemBaseInput';
+import { PhoneRecord } from '@/object-record/record-field/types/FieldMetadata';
+import { DropdownMenu } from '@/ui/layout/dropdown/components/DropdownMenu';
 import { DropdownMenuItemsContainer } from '@/ui/layout/dropdown/components/DropdownMenuItemsContainer';
 import { DropdownMenuSeparator } from '@/ui/layout/dropdown/components/DropdownMenuSeparator';
-import { MenuItem } from '@/ui/navigation/menu-item/components/MenuItem';
 import { useScopedHotkeys } from '@/ui/utilities/hotkey/hooks/useScopedHotkeys';
 import { useListenClickOutside } from '@/ui/utilities/pointer-event/hooks/useListenClickOutside';
 import { FieldMetadataType } from '~/generated-metadata/graphql';
 import { moveArrayItem } from '~/utils/array/moveArrayItem';
 import { toSpliced } from '~/utils/array/toSpliced';
-
-const StyledDropdownMenu = styled(DropdownMenu)`
-  left: -1px;
-  position: absolute;
-  top: -1px;
-`;
+import { turnIntoEmptyStringIfWhitespacesOnly } from '~/utils/string/turnIntoEmptyStringIfWhitespacesOnly';
 
 type MultiItemFieldInputProps<T> = {
   items: T[];
@@ -42,10 +34,12 @@ type MultiItemFieldInputProps<T> = {
   hotkeyScope: string;
   newItemLabel?: string;
   fieldMetadataType: FieldMetadataType;
-  renderInput?: DropdownMenuInputProps['renderInput'];
+  renderInput?: MultiItemBaseInputProps['renderInput'];
+  onClickOutside?: (event: MouseEvent | TouchEvent) => void;
 };
 
 // Todo: the API of this component does not look healthy: we have renderInput, renderItem, formatInput, ...
+// This should be refactored with a hook instead that exposes those events in a context around this component and its children.
 export const MultiItemFieldInput = <T,>({
   items,
   onPersist,
@@ -58,6 +52,7 @@ export const MultiItemFieldInput = <T,>({
   newItemLabel,
   fieldMetadataType,
   renderInput,
+  onClickOutside,
 }: MultiItemFieldInputProps<T>) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const handleDropdownClose = () => {
@@ -66,7 +61,10 @@ export const MultiItemFieldInput = <T,>({
 
   useListenClickOutside({
     refs: [containerRef],
-    callback: handleDropdownClose,
+    callback: (event) => {
+      onClickOutside?.(event);
+    },
+    listenerId: hotkeyScope,
   });
 
   useScopedHotkeys(Key.Escape, handleDropdownClose, hotkeyScope);
@@ -84,9 +82,9 @@ export const MultiItemFieldInput = <T,>({
     setInputValue(value);
     if (!validateInput) return;
 
-    if (errorData.isValid) {
-      setErrorData(errorData);
-    }
+    setErrorData(
+      errorData.isValid ? errorData : { isValid: true, errorMessage: '' },
+    );
   };
 
   const handleAddButtonClick = () => {
@@ -103,9 +101,13 @@ export const MultiItemFieldInput = <T,>({
         break;
       case FieldMetadataType.Phones:
         item = items[index] as PhoneRecord;
-        setInputValue(item.countryCode + item.number);
+        setInputValue(item.callingCode + item.number);
         break;
       case FieldMetadataType.Emails:
+        item = items[index] as string;
+        setInputValue(item);
+        break;
+      case FieldMetadataType.Array:
         item = items[index] as string;
         setInputValue(item);
         break;
@@ -156,7 +158,7 @@ export const MultiItemFieldInput = <T,>({
   };
 
   return (
-    <StyledDropdownMenu ref={containerRef} width={200}>
+    <DropdownMenu ref={containerRef} width={200}>
       {!!items.length && (
         <>
           <DropdownMenuItemsContainer>
@@ -174,7 +176,7 @@ export const MultiItemFieldInput = <T,>({
         </>
       )}
       {isInputDisplayed || !items.length ? (
-        <DropdownMenuInput
+        <MultiItemBaseInput
           autoFocus
           placeholder={placeholder}
           value={inputValue}
@@ -190,13 +192,21 @@ export const MultiItemFieldInput = <T,>({
                   })
               : undefined
           }
-          onChange={(event) => handleOnChange(event.target.value)}
+          onEscape={handleDropdownClose}
+          onChange={(event) =>
+            handleOnChange(
+              turnIntoEmptyStringIfWhitespacesOnly(event.target.value),
+            )
+          }
           onEnter={handleSubmitInput}
+          hasItem={!!items.length}
           rightComponent={
-            <LightIconButton
-              Icon={isAddingNewItem ? IconPlus : IconCheck}
-              onClick={handleSubmitInput}
-            />
+            items.length ? (
+              <LightIconButton
+                Icon={isAddingNewItem ? IconPlus : IconCheck}
+                onClick={handleSubmitInput}
+              />
+            ) : null
           }
         />
       ) : (
@@ -208,6 +218,6 @@ export const MultiItemFieldInput = <T,>({
           />
         </DropdownMenuItemsContainer>
       )}
-    </StyledDropdownMenu>
+    </DropdownMenu>
   );
 };

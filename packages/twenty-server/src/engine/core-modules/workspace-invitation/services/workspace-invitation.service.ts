@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
+import crypto from 'crypto';
+
 import { render } from '@react-email/render';
+import { addMilliseconds } from 'date-fns';
+import ms from 'ms';
 import { SendInviteLinkEmail } from 'twenty-emails';
 import { IsNull, Repository } from 'typeorm';
 
@@ -9,13 +13,18 @@ import {
   AppToken,
   AppTokenType,
 } from 'src/engine/core-modules/app-token/app-token.entity';
-import { TokenService } from 'src/engine/core-modules/auth/token/services/token.service';
+import {
+  AuthException,
+  AuthExceptionCode,
+} from 'src/engine/core-modules/auth/auth.exception';
+import { DomainManagerService } from 'src/engine/core-modules/domain-manager/service/domain-manager.service';
 import { EmailService } from 'src/engine/core-modules/email/email.service';
 import { EnvironmentService } from 'src/engine/core-modules/environment/environment.service';
 import { OnboardingService } from 'src/engine/core-modules/onboarding/onboarding.service';
 import { UserWorkspace } from 'src/engine/core-modules/user-workspace/user-workspace.entity';
 import { User } from 'src/engine/core-modules/user/user.entity';
 import { SendInvitationsOutput } from 'src/engine/core-modules/workspace-invitation/dtos/send-invitations.output';
+import { castAppTokenToWorkspaceInvitationUtil } from 'src/engine/core-modules/workspace-invitation/utils/cast-app-token-to-workspace-invitation.util';
 import {
   WorkspaceInvitationException,
   WorkspaceInvitationExceptionCode,
@@ -28,15 +37,122 @@ export class WorkspaceInvitationService {
   constructor(
     @InjectRepository(AppToken, 'core')
     private readonly appTokenRepository: Repository<AppToken>,
-    private readonly environmentService: EnvironmentService,
-    private readonly emailService: EmailService,
-    private readonly tokenService: TokenService,
+    @InjectRepository(Workspace, 'core')
+    private readonly workspaceRepository: Repository<Workspace>,
     @InjectRepository(UserWorkspace, 'core')
     private readonly userWorkspaceRepository: Repository<UserWorkspace>,
+    private readonly environmentService: EnvironmentService,
+    private readonly emailService: EmailService,
     private readonly onboardingService: OnboardingService,
+    private readonly domainManagerService: DomainManagerService,
   ) {}
 
-  private async getOneWorkspaceInvitation(workspaceId: string, email: string) {
+  // VALIDATIONS METHODS
+  private async validatePublicInvitation(workspaceInviteHash: string) {
+    const workspace = await this.workspaceRepository.findOne({
+      where: {
+        inviteHash: workspaceInviteHash,
+      },
+    });
+
+    if (!workspace) {
+      throw new AuthException(
+        'Workspace not found',
+        AuthExceptionCode.WORKSPACE_NOT_FOUND,
+      );
+    }
+
+    if (!workspace.isPublicInviteLinkEnabled) {
+      throw new AuthException(
+        'Workspace does not allow public invites',
+        AuthExceptionCode.FORBIDDEN_EXCEPTION,
+      );
+    }
+
+    return { isValid: true, workspace };
+  }
+
+  private async validatePersonalInvitation({
+    workspacePersonalInviteToken,
+    email,
+  }: {
+    workspacePersonalInviteToken?: string;
+    email: string;
+  }) {
+    try {
+      const appToken = await this.appTokenRepository.findOne({
+        where: {
+          value: workspacePersonalInviteToken,
+          type: AppTokenType.InvitationToken,
+        },
+        relations: ['workspace'],
+      });
+
+      if (!appToken) {
+        throw new Error('Invalid invitation token');
+      }
+
+      if (!appToken.context?.email || appToken.context?.email !== email) {
+        throw new Error('Email does not match the invitation');
+      }
+
+      if (new Date(appToken.expiresAt) < new Date()) {
+        throw new Error('Invitation expired');
+      }
+
+      return { isValid: true, workspace: appToken.workspace };
+    } catch (err) {
+      throw new AuthException(
+        err.message,
+        AuthExceptionCode.FORBIDDEN_EXCEPTION,
+      );
+    }
+  }
+
+  async validateInvitation({
+    workspacePersonalInviteToken,
+    workspaceInviteHash,
+    email,
+  }: {
+    workspacePersonalInviteToken?: string;
+    workspaceInviteHash?: string;
+    email: string;
+  }) {
+    if (workspacePersonalInviteToken) {
+      return await this.validatePersonalInvitation({
+        workspacePersonalInviteToken,
+        email,
+      });
+    }
+
+    if (workspaceInviteHash) {
+      return await this.validatePublicInvitation(workspaceInviteHash);
+    }
+
+    throw new AuthException(
+      'Invitation invalid',
+      AuthExceptionCode.FORBIDDEN_EXCEPTION,
+    );
+  }
+
+  async findInvitationByWorkspaceSubdomainAndUserEmail({
+    subdomain,
+    email,
+  }: {
+    subdomain: string;
+    email: string;
+  }) {
+    const workspace =
+      await this.domainManagerService.getWorkspaceBySubdomainOrDefaultWorkspace(
+        subdomain,
+      );
+
+    if (!workspace) return;
+
+    return await this.getOneWorkspaceInvitation(workspace.id, email);
+  }
+
+  async getOneWorkspaceInvitation(workspaceId: string, email: string) {
     return await this.appTokenRepository
       .createQueryBuilder('appToken')
       .where('"appToken"."workspaceId" = :workspaceId', {
@@ -49,26 +165,38 @@ export class WorkspaceInvitationService {
       .getOne();
   }
 
-  castAppTokenToWorkspaceInvitation(appToken: AppToken) {
-    if (appToken.type !== AppTokenType.InvitationToken) {
+  async getAppTokenByInvitationToken(invitationToken: string) {
+    const appToken = await this.appTokenRepository.findOne({
+      where: {
+        value: invitationToken,
+        type: AppTokenType.InvitationToken,
+      },
+      relations: ['workspace'],
+    });
+
+    if (!appToken) {
       throw new WorkspaceInvitationException(
-        `Token type must be "${AppTokenType.InvitationToken}"`,
-        WorkspaceInvitationExceptionCode.INVALID_APP_TOKEN_TYPE,
+        'Invalid invitation token',
+        WorkspaceInvitationExceptionCode.INVALID_INVITATION,
       );
     }
 
-    if (!appToken.context?.email) {
-      throw new WorkspaceInvitationException(
-        `Invitation corrupted: Missing email in context`,
-        WorkspaceInvitationExceptionCode.INVITATION_CORRUPTED,
-      );
-    }
+    return appToken;
+  }
 
-    return {
-      id: appToken.id,
-      email: appToken.context.email,
-      expiresAt: appToken.expiresAt,
-    };
+  async loadWorkspaceInvitations(workspace: Workspace) {
+    const appTokens = await this.appTokenRepository.find({
+      where: {
+        workspaceId: workspace.id,
+        type: AppTokenType.InvitationToken,
+        deletedAt: IsNull(),
+      },
+      select: {
+        value: false,
+      },
+    });
+
+    return appTokens.map(castAppTokenToWorkspaceInvitationUtil);
   }
 
   async createWorkspaceInvitation(email: string, workspace: Workspace) {
@@ -103,22 +231,7 @@ export class WorkspaceInvitationService {
       );
     }
 
-    return this.tokenService.generateInvitationToken(workspace.id, email);
-  }
-
-  async loadWorkspaceInvitations(workspace: Workspace) {
-    const appTokens = await this.appTokenRepository.find({
-      where: {
-        workspaceId: workspace.id,
-        type: AppTokenType.InvitationToken,
-        deletedAt: IsNull(),
-      },
-      select: {
-        value: false,
-      },
-    });
-
-    return appTokens.map(this.castAppTokenToWorkspaceInvitation);
+    return this.generateInvitationToken(workspace.id, email);
   }
 
   async deleteWorkspaceInvitation(appTokenId: string, workspaceId: string) {
@@ -160,7 +273,7 @@ export class WorkspaceInvitationService {
       },
     });
 
-    if (!appToken || !appToken.context || !('email' in appToken.context)) {
+    if (!appToken || !appToken.context?.email) {
       throw new WorkspaceInvitationException(
         'Invalid appToken',
         WorkspaceInvitationExceptionCode.INVALID_INVITATION,
@@ -215,19 +328,26 @@ export class WorkspaceInvitationService {
       }),
     );
 
-    const frontBaseURL = this.environmentService.get('FRONT_BASE_URL');
-
     for (const invitation of invitationsPr) {
       if (invitation.status === 'fulfilled') {
-        const link = new URL(`${frontBaseURL}/invite/${workspace?.inviteHash}`);
-
-        if (invitation.value.isPersonalInvitation) {
-          link.searchParams.set('inviteToken', invitation.value.appToken.value);
-        }
+        const link = this.domainManagerService.buildWorkspaceURL({
+          subdomain: workspace.subdomain,
+          pathname: `invite/${workspace?.inviteHash}`,
+          searchParams: invitation.value.isPersonalInvitation
+            ? {
+                inviteToken: invitation.value.appToken.value,
+                email: invitation.value.email,
+              }
+            : {},
+        });
         const emailData = {
           link: link.toString(),
           workspace: { name: workspace.displayName, logo: workspace.logo },
-          sender: { email: sender.email, firstName: sender.firstName },
+          sender: {
+            email: sender.email,
+            firstName: sender.firstName,
+            lastName: sender.lastName,
+          },
           serverUrl: this.environmentService.get('SERVER_URL'),
         };
 
@@ -241,9 +361,7 @@ export class WorkspaceInvitationService {
         });
 
         await this.emailService.send({
-          from: `${this.environmentService.get(
-            'EMAIL_FROM_NAME',
-          )} <${this.environmentService.get('EMAIL_FROM_ADDRESS')}>`,
+          from: `${sender.firstName} ${sender.lastName} (via Twenty) <${this.environmentService.get('EMAIL_FROM_ADDRESS')}>`,
           to: invitation.value.email,
           subject: 'Join your team on Twenty',
           text,
@@ -273,9 +391,7 @@ export class WorkspaceInvitationService {
         } else {
           acc.result.push(
             invitation.value.isPersonalInvitation
-              ? this.castAppTokenToWorkspaceInvitation(
-                  invitation.value.appToken,
-                )
+              ? castAppTokenToWorkspaceInvitationUtil(invitation.value.appToken)
               : { email: invitation.value.email },
           );
         }
@@ -289,5 +405,32 @@ export class WorkspaceInvitationService {
       success: result.errors.length === 0,
       ...result,
     };
+  }
+
+  async generateInvitationToken(workspaceId: string, email: string) {
+    const expiresIn = this.environmentService.get(
+      'INVITATION_TOKEN_EXPIRES_IN',
+    );
+
+    if (!expiresIn) {
+      throw new AuthException(
+        'Expiration time for invitation token is not set',
+        AuthExceptionCode.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    const expiresAt = addMilliseconds(new Date().getTime(), ms(expiresIn));
+
+    const invitationToken = this.appTokenRepository.create({
+      workspaceId,
+      expiresAt,
+      type: AppTokenType.InvitationToken,
+      value: crypto.randomBytes(32).toString('hex'),
+      context: {
+        email,
+      },
+    });
+
+    return this.appTokenRepository.save(invitationToken);
   }
 }

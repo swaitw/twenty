@@ -52,30 +52,16 @@ resource "kubernetes_deployment" "twentycrm_server" {
           }
 
           env {
-            name  = "FRONT_BASE_URL"
-            value = var.twentycrm_app_hostname
-          }
-
-          env {
             name  = "PG_DATABASE_URL"
             value = "postgres://twenty:${var.twentycrm_pgdb_admin_password}@${kubernetes_service.twentycrm_db.metadata.0.name}.${kubernetes_namespace.twentycrm.metadata.0.name}.svc.cluster.local/default"
           }
           env {
-            name  = "REDIS_HOST"
-            value = "${kubernetes_service.twentycrm_redis.metadata.0.name}.${kubernetes_namespace.twentycrm.metadata.0.name}.svc.cluster.local"
+            name  = "REDIS_URL"
+            value = "redis://${kubernetes_service.twentycrm_redis.metadata.0.name}.${kubernetes_namespace.twentycrm.metadata.0.name}.svc.cluster.local:6379"
           }
           env {
-            name  = "REDIS_PORT"
-            value = 6379
-          }
-          env {
-            name  = "ENABLE_DB_MIGRATIONS"
-            value = "true"
-          }
-
-          env {
-            name  = "SIGN_IN_PREFILLED"
-            value = "true"
+            name  = "DISABLE_DB_MIGRATIONS"
+            value = "false"
           }
 
           env {
@@ -95,41 +81,11 @@ resource "kubernetes_deployment" "twentycrm_server" {
             value = "1h"
           }
           env {
-            name = "ACCESS_TOKEN_SECRET"
+            name = "APP_SECRET"
             value_from {
               secret_key_ref {
                 name = "tokens"
                 key  = "accessToken"
-              }
-            }
-          }
-
-          env {
-            name = "LOGIN_TOKEN_SECRET"
-            value_from {
-              secret_key_ref {
-                name = "tokens"
-                key  = "loginToken"
-              }
-            }
-          }
-
-          env {
-            name = "REFRESH_TOKEN_SECRET"
-            value_from {
-              secret_key_ref {
-                name = "tokens"
-                key  = "refreshToken"
-              }
-            }
-          }
-
-          env {
-            name = "FILE_TOKEN_SECRET"
-            value_from {
-              secret_key_ref {
-                name = "tokens"
-                key  = "fileToken"
               }
             }
           }

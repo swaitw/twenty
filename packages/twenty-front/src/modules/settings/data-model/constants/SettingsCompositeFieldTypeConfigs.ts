@@ -89,9 +89,12 @@ export const SETTINGS_COMPOSITE_FIELD_TYPE_CONFIGS = {
     label: 'Phones',
     Icon: IllustrationIconPhone,
     exampleValue: {
-      primaryPhoneNumber: '234-567-890',
-      primaryPhoneCountryCode: '+1',
-      additionalPhones: [{ number: '234-567-890', countryCode: '+1' }],
+      primaryPhoneCallingCode: '+33',
+      primaryPhoneCountryCode: 'FR',
+      primaryPhoneNumber: '789012345',
+      additionalPhones: [
+        { number: '617272323', callingCode: '+33', countryCode: 'FR' },
+      ],
     },
     subFields: [
       'primaryPhoneNumber',
@@ -102,6 +105,7 @@ export const SETTINGS_COMPOSITE_FIELD_TYPE_CONFIGS = {
     labelBySubField: {
       primaryPhoneNumber: 'Primary Phone Number',
       primaryPhoneCountryCode: 'Primary Phone Country Code',
+      primaryPhoneCallingCode: 'Primary Phone Calling Code',
       additionalPhones: 'Additional Phones',
     },
     category: 'Basic',
@@ -110,7 +114,7 @@ export const SETTINGS_COMPOSITE_FIELD_TYPE_CONFIGS = {
     label: 'Full Name',
     Icon: IllustrationIconUser,
     exampleValue: { firstName: 'John', lastName: 'Doe' },
-    category: 'Advanced',
+    category: 'Basic',
     subFields: ['firstName', 'lastName'],
     filterableSubFields: ['firstName', 'lastName'],
     labelBySubField: {
@@ -151,7 +155,7 @@ export const SETTINGS_COMPOSITE_FIELD_TYPE_CONFIGS = {
     },
     exampleValue: {
       addressStreet1: '456 Oak Street',
-      addressStreet2: 'Unit 3B',
+      addressStreet2: '',
       addressCity: 'Springfield',
       addressState: 'California',
       addressCountry: 'United States',

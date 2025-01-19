@@ -5,6 +5,7 @@ import {
   ActorFilter,
   AddressFilter,
   AndObjectRecordFilter,
+  ArrayFilter,
   BooleanFilter,
   CurrencyFilter,
   DateFilter,
@@ -13,17 +14,26 @@ import {
   FullNameFilter,
   LeafObjectRecordFilter,
   LinksFilter,
+  MultiSelectFilter,
   NotObjectRecordFilter,
   OrObjectRecordFilter,
   PhonesFilter,
+  RatingFilter,
+  RawJsonFilter,
   RecordGqlOperationFilter,
+  SelectFilter,
   StringFilter,
   UUIDFilter,
 } from '@/object-record/graphql/types/RecordGqlOperationFilter';
+import { isMatchingArrayFilter } from '@/object-record/record-filter/utils/isMatchingArrayFilter';
 import { isMatchingBooleanFilter } from '@/object-record/record-filter/utils/isMatchingBooleanFilter';
 import { isMatchingCurrencyFilter } from '@/object-record/record-filter/utils/isMatchingCurrencyFilter';
 import { isMatchingDateFilter } from '@/object-record/record-filter/utils/isMatchingDateFilter';
 import { isMatchingFloatFilter } from '@/object-record/record-filter/utils/isMatchingFloatFilter';
+import { isMatchingMultiSelectFilter } from '@/object-record/record-filter/utils/isMatchingMultiSelectFilter';
+import { isMatchingRatingFilter } from '@/object-record/record-filter/utils/isMatchingRatingFilter';
+import { isMatchingRawJsonFilter } from '@/object-record/record-filter/utils/isMatchingRawJsonFilter';
+import { isMatchingSelectFilter } from '@/object-record/record-filter/utils/isMatchingSelectFilter';
 import { isMatchingStringFilter } from '@/object-record/record-filter/utils/isMatchingStringFilter';
 import { isMatchingUUIDFilter } from '@/object-record/record-filter/utils/isMatchingUUIDFilter';
 import { FieldMetadataType } from '~/generated-metadata/graphql';
@@ -156,12 +166,45 @@ export const isRecordMatchingFilter = ({
     }
 
     switch (objectMetadataField.type) {
-      case FieldMetadataType.Select:
       case FieldMetadataType.Rating:
-      case FieldMetadataType.MultiSelect:
+        return isMatchingRatingFilter({
+          ratingFilter: filterValue as RatingFilter,
+          value: record[filterKey],
+        });
       case FieldMetadataType.Text: {
         return isMatchingStringFilter({
           stringFilter: filterValue as StringFilter,
+          value: record[filterKey],
+        });
+      }
+      case FieldMetadataType.RichText: {
+        // TODO: Implement a better rich text filter once it becomes a composite field
+        // See this issue for more context: https://github.com/twentyhq/twenty/issues/7613#issuecomment-2408944585
+        // This should be tackled in Q4'24
+        return isMatchingStringFilter({
+          stringFilter: filterValue as StringFilter,
+          value: record[filterKey],
+        });
+      }
+      case FieldMetadataType.Select:
+        return isMatchingSelectFilter({
+          selectFilter: filterValue as SelectFilter,
+          value: record[filterKey],
+        });
+      case FieldMetadataType.MultiSelect:
+        return isMatchingMultiSelectFilter({
+          multiSelectFilter: filterValue as MultiSelectFilter,
+          value: record[filterKey],
+        });
+      case FieldMetadataType.Array: {
+        return isMatchingArrayFilter({
+          arrayFilter: filterValue as ArrayFilter,
+          value: record[filterKey],
+        });
+      }
+      case FieldMetadataType.RawJson: {
+        return isMatchingRawJsonFilter({
+          rawJsonFilter: filterValue as RawJsonFilter,
           value: record[filterKey],
         });
       }
@@ -280,10 +323,7 @@ export const isRecordMatchingFilter = ({
       case FieldMetadataType.Phones: {
         const phonesFilter = filterValue as PhonesFilter;
 
-        const keys: (keyof PhonesFilter)[] = [
-          'primaryPhoneNumber',
-          'primaryPhoneCountryCode',
-        ];
+        const keys: (keyof PhonesFilter)[] = ['primaryPhoneNumber'];
 
         return keys.some((key) => {
           const value = phonesFilter[key];
@@ -302,6 +342,7 @@ export const isRecordMatchingFilter = ({
           `Not implemented yet, use UUID filter instead on the corredponding "${filterKey}Id" field`,
         );
       }
+
       default: {
         throw new Error(
           `Not implemented yet for field type "${objectMetadataField.type}"`,

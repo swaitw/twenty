@@ -1,27 +1,8 @@
 import { Field, ObjectType } from '@nestjs/graphql';
 
+import { TrialPeriodDTO } from 'src/engine/core-modules/billing/dto/trial-period.dto';
 import { CaptchaDriverType } from 'src/engine/core-modules/captcha/interfaces';
-
-@ObjectType()
-class AuthProviders {
-  @Field(() => Boolean)
-  google: boolean;
-
-  @Field(() => Boolean)
-  magicLink: boolean;
-
-  @Field(() => Boolean)
-  password: boolean;
-
-  @Field(() => Boolean)
-  microsoft: boolean;
-}
-
-@ObjectType()
-class Telemetry {
-  @Field(() => Boolean)
-  enabled: boolean;
-}
+import { AuthProviders } from 'src/engine/core-modules/workspace/dtos/public-workspace-data-output';
 
 @ObjectType()
 class Billing {
@@ -31,8 +12,8 @@ class Billing {
   @Field(() => String, { nullable: true })
   billingUrl?: string;
 
-  @Field(() => Number, { nullable: true })
-  billingFreeTrialDurationInDays?: number;
+  @Field(() => [TrialPeriodDTO])
+  trialPeriods: TrialPeriodDTO[];
 }
 
 @ObjectType()
@@ -83,10 +64,22 @@ export class ClientConfig {
   signInPrefilled: boolean;
 
   @Field(() => Boolean)
-  signUpDisabled: boolean;
+  isMultiWorkspaceEnabled: boolean;
+
+  @Field(() => Boolean)
+  isEmailVerificationRequired: boolean;
+
+  @Field(() => String, { nullable: true })
+  defaultSubdomain: string;
+
+  @Field(() => String)
+  frontDomain: string;
 
   @Field(() => Boolean)
   debugMode: boolean;
+
+  @Field(() => Boolean)
+  analyticsEnabled: boolean;
 
   @Field(() => Support)
   support: Support;
@@ -102,4 +95,7 @@ export class ClientConfig {
 
   @Field(() => ApiConfig)
   api: ApiConfig;
+
+  @Field(() => Boolean)
+  canManageFeatureFlags: boolean;
 }

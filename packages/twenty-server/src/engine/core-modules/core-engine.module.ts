@@ -3,6 +3,7 @@ import { HttpAdapterHost } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 
 import { ActorModule } from 'src/engine/core-modules/actor/actor.module';
+import { AdminPanelModule } from 'src/engine/core-modules/admin-panel/admin-panel.module';
 import { AppTokenModule } from 'src/engine/core-modules/app-token/app-token.module';
 import { AuthModule } from 'src/engine/core-modules/auth/auth.module';
 import { BillingModule } from 'src/engine/core-modules/billing/billing.module';
@@ -32,11 +33,14 @@ import { messageQueueModuleFactory } from 'src/engine/core-modules/message-queue
 import { TimelineMessagingModule } from 'src/engine/core-modules/messaging/timeline-messaging.module';
 import { OpenApiModule } from 'src/engine/core-modules/open-api/open-api.module';
 import { PostgresCredentialsModule } from 'src/engine/core-modules/postgres-credentials/postgres-credentials.module';
+import { RedisClientModule } from 'src/engine/core-modules/redis-client/redis-client.module';
+import { RedisClientService } from 'src/engine/core-modules/redis-client/redis-client.service';
 import { serverlessModuleFactory } from 'src/engine/core-modules/serverless/serverless-module.factory';
 import { ServerlessModule } from 'src/engine/core-modules/serverless/serverless.module';
+import { WorkspaceSSOModule } from 'src/engine/core-modules/sso/sso.module';
 import { TelemetryModule } from 'src/engine/core-modules/telemetry/telemetry.module';
 import { UserModule } from 'src/engine/core-modules/user/user.module';
-import { WorkflowTriggerApiModule } from 'src/engine/core-modules/workflow/workflow-trigger-api.module';
+import { WorkflowApiModule } from 'src/engine/core-modules/workflow/workflow-api.module';
 import { WorkspaceInvitationModule } from 'src/engine/core-modules/workspace-invitation/workspace-invitation.module';
 import { WorkspaceModule } from 'src/engine/core-modules/workspace/workspace.module';
 import { WorkspaceEventEmitterModule } from 'src/engine/workspace-event-emitter/workspace-event-emitter.module';
@@ -61,12 +65,15 @@ import { FileModule } from './file/file.module';
     UserModule,
     WorkspaceModule,
     WorkspaceInvitationModule,
+    WorkspaceSSOModule,
     PostgresCredentialsModule,
-    WorkflowTriggerApiModule,
+    WorkflowApiModule,
     WorkspaceEventEmitterModule,
     ActorModule,
     TelemetryModule,
+    AdminPanelModule,
     EnvironmentModule.forRoot({}),
+    RedisClientModule,
     FileStorageModule.forRootAsync({
       useFactory: fileStorageModuleFactory,
       inject: [EnvironmentService],
@@ -77,7 +84,7 @@ import { FileModule } from './file/file.module';
     }),
     MessageQueueModule.registerAsync({
       useFactory: messageQueueModuleFactory,
-      inject: [EnvironmentService],
+      inject: [EnvironmentService, RedisClientService],
     }),
     ExceptionHandlerModule.forRootAsync({
       useFactory: exceptionHandlerModuleFactory,
@@ -117,6 +124,7 @@ import { FileModule } from './file/file.module';
     UserModule,
     WorkspaceModule,
     WorkspaceInvitationModule,
+    WorkspaceSSOModule,
   ],
 })
 export class CoreEngineModule {}

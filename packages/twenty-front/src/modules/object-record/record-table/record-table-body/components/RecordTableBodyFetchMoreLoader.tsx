@@ -4,10 +4,11 @@ import { useInView } from 'react-intersection-observer';
 import { useRecoilCallback } from 'recoil';
 import { GRAY_SCALE } from 'twenty-ui';
 
+import { isRecordIndexLoadMoreLockedComponentState } from '@/object-record/record-index/states/isRecordIndexLoadMoreLockedComponentState';
 import { useRecordTable } from '@/object-record/record-table/hooks/useRecordTable';
 import { hasRecordTableFetchedAllRecordsComponentStateV2 } from '@/object-record/record-table/states/hasRecordTableFetchedAllRecordsComponentStateV2';
 import { RecordTableWithWrappersScrollWrapperContext } from '@/ui/utilities/scroll/contexts/ScrollWrapperContexts';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
+import { useRecoilComponentValueV2 } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValueV2';
 
 const StyledText = styled.div`
   align-items: center;
@@ -22,22 +23,31 @@ const StyledText = styled.div`
 export const RecordTableBodyFetchMoreLoader = () => {
   const { setRecordTableLastRowVisible } = useRecordTable();
 
+  const isRecordTableLoadMoreLocked = useRecoilComponentValueV2(
+    isRecordIndexLoadMoreLockedComponentState,
+  );
+
   const onLastRowVisible = useRecoilCallback(
     () => async (inView: boolean) => {
+      if (isRecordTableLoadMoreLocked) {
+        return;
+      }
+
       setRecordTableLastRowVisible(inView);
     },
-    [setRecordTableLastRowVisible],
+    [setRecordTableLastRowVisible, isRecordTableLoadMoreLocked],
   );
 
   const scrollWrapperRef = useContext(
     RecordTableWithWrappersScrollWrapperContext,
   );
 
-  const hasRecordTableFetchedAllRecordsComponents = useRecoilComponentValue(
+  const hasRecordTableFetchedAllRecordsComponents = useRecoilComponentValueV2(
     hasRecordTableFetchedAllRecordsComponentStateV2,
   );
 
-  const showLoadingMoreRow = !hasRecordTableFetchedAllRecordsComponents;
+  const showLoadingMoreRow =
+    !hasRecordTableFetchedAllRecordsComponents && !isRecordTableLoadMoreLocked;
 
   const { ref: tbodyRef } = useInView({
     onChange: onLastRowVisible,

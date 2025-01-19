@@ -1,3 +1,4 @@
+import { WORKSPACE_MEMBER_QUERY_FRAGMENT } from '@/workspace-member/graphql/fragments/workspaceMemberQueryFragment';
 import { gql } from '@apollo/client';
 
 export const USER_QUERY_FRAGMENT = gql`
@@ -8,6 +9,14 @@ export const USER_QUERY_FRAGMENT = gql`
     email
     canImpersonate
     supportUserHash
+    analyticsTinybirdJwts {
+      getWebhookAnalytics
+      getPageviewsAnalytics
+      getUsersAnalytics
+      getServerlessFunctionDuration
+      getServerlessFunctionSuccessRate
+      getServerlessFunctionErrorCount
+    }
     onboardingStatus
     workspaceMember {
       ...WorkspaceMemberQueryFragment
@@ -15,7 +24,7 @@ export const USER_QUERY_FRAGMENT = gql`
     workspaceMembers {
       ...WorkspaceMemberQueryFragment
     }
-    defaultWorkspace {
+    currentWorkspace {
       id
       displayName
       logo
@@ -23,6 +32,12 @@ export const USER_QUERY_FRAGMENT = gql`
       inviteHash
       allowImpersonation
       activationStatus
+      isPublicInviteLinkEnabled
+      isGoogleAuthEnabled
+      isMicrosoftAuthEnabled
+      isPasswordAuthEnabled
+      subdomain
+      hasValidEntrepriseKey
       featureFlags {
         id
         key
@@ -43,8 +58,11 @@ export const USER_QUERY_FRAGMENT = gql`
         logo
         displayName
         domainName
+        subdomain
       }
     }
     userVars
   }
+
+  ${WORKSPACE_MEMBER_QUERY_FRAGMENT}
 `;

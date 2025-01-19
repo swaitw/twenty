@@ -1,12 +1,13 @@
-import { useEffect } from 'react';
 import { Decorator, Meta, StoryObj } from '@storybook/react';
 import { expect, fn, userEvent, waitFor, within } from '@storybook/test';
+import { useEffect } from 'react';
 
 import { useSetHotkeyScope } from '@/ui/utilities/hotkey/hooks/useSetHotkeyScope';
 import { FieldMetadataType } from '~/generated/graphql';
 import { SnackBarDecorator } from '~/testing/decorators/SnackBarDecorator';
 
-import { FieldContextProvider } from '../../../__stories__/FieldContextProvider';
+import { StorybookFieldInputDropdownFocusIdSetterEffect } from '~/testing/components/StorybookFieldInputDropdownFocusIdSetterEffect';
+import { FieldContextProvider } from '../../../components/FieldContextProvider';
 import { useTextField } from '../../../hooks/useTextField';
 import { TextFieldInput, TextFieldInputProps } from '../TextFieldInput';
 
@@ -56,6 +57,7 @@ const TextFieldInputWithContext = ({
         }}
         recordId={recordId}
       >
+        <StorybookFieldInputDropdownFocusIdSetterEffect />
         <TextFieldValueSetterEffect value={value} />
         <TextFieldInput
           onEnter={onEnter}

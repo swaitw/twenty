@@ -130,6 +130,13 @@ export const getResolverArgs = (
           isNullable: false,
         },
       };
+    case 'restoreOne':
+      return {
+        id: {
+          type: GraphQLID,
+          isNullable: false,
+        },
+      };
     case 'destroyMany':
       return {
         filter: {
@@ -145,6 +152,10 @@ export const getResolverArgs = (
         },
         limit: {
           type: GraphQLInt,
+          isNullable: true,
+        },
+        filter: {
+          kind: InputTypeDefinitionKind.Filter,
           isNullable: true,
         },
       };

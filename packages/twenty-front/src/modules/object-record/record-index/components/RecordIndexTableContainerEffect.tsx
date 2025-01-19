@@ -1,43 +1,32 @@
 import { useEffect } from 'react';
-import { useRecoilValue, useSetRecoilState } from 'recoil';
 
-import { contextStoreCurrentObjectMetadataIdState } from '@/context-store/states/contextStoreCurrentObjectMetadataIdState';
-import { contextStoreTargetedRecordIdsState } from '@/context-store/states/contextStoreTargetedRecordIdsState';
 import { useColumnDefinitionsFromFieldMetadata } from '@/object-metadata/hooks/useColumnDefinitionsFromFieldMetadata';
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
+import { useRecordIndexContextOrThrow } from '@/object-record/record-index/contexts/RecordIndexContext';
 import { useHandleToggleColumnFilter } from '@/object-record/record-index/hooks/useHandleToggleColumnFilter';
 import { useHandleToggleColumnSort } from '@/object-record/record-index/hooks/useHandleToggleColumnSort';
+import { useSetRecordIndexEntityCount } from '@/object-record/record-index/hooks/useSetRecordIndexEntityCount';
 import { useRecordTable } from '@/object-record/record-table/hooks/useRecordTable';
-import { useSetRecordCountInCurrentView } from '@/views/hooks/useSetRecordCountInCurrentView';
+import { viewFieldAggregateOperationState } from '@/object-record/record-table/record-table-footer/states/viewFieldAggregateOperationState';
+import { convertAggregateOperationToExtendedAggregateOperation } from '@/object-record/utils/convertAggregateOperationToExtendedAggregateOperation';
+import { useGetCurrentView } from '@/views/hooks/useGetCurrentView';
+import { ViewField } from '@/views/types/ViewField';
+import { useRecoilCallback } from 'recoil';
+import { isDefined } from 'twenty-ui';
 
-type RecordIndexTableContainerEffectProps = {
-  objectNameSingular: string;
-  recordTableId: string;
-  viewBarId: string;
-};
+export const RecordIndexTableContainerEffect = () => {
+  const { recordIndexId, objectNameSingular } = useRecordIndexContextOrThrow();
 
-export const RecordIndexTableContainerEffect = ({
-  objectNameSingular,
-  recordTableId,
-  viewBarId,
-}: RecordIndexTableContainerEffectProps) => {
+  const viewBarId = recordIndexId;
+
   const {
     setAvailableTableColumns,
     setOnEntityCountChange,
-    selectedRowIdsSelector,
     setOnToggleColumnFilter,
     setOnToggleColumnSort,
   } = useRecordTable({
-    recordTableId,
+    recordTableId: recordIndexId,
   });
-
-  const setContextStoreTargetedRecordIds = useSetRecoilState(
-    contextStoreTargetedRecordIdsState,
-  );
-
-  const setContextStoreCurrentObjectMetadataItem = useSetRecoilState(
-    contextStoreCurrentObjectMetadataIdState,
-  );
 
   const { objectMetadataItem } = useObjectMetadataItem({
     objectNameSingular,
@@ -46,14 +35,11 @@ export const RecordIndexTableContainerEffect = ({
   const { columnDefinitions } =
     useColumnDefinitionsFromFieldMetadata(objectMetadataItem);
 
-  const { setRecordCountInCurrentView } =
-    useSetRecordCountInCurrentView(viewBarId);
+  const { setRecordIndexEntityCount } = useSetRecordIndexEntityCount(viewBarId);
 
   useEffect(() => {
     setAvailableTableColumns(columnDefinitions);
   }, [columnDefinitions, setAvailableTableColumns]);
-
-  const selectedRowIds = useRecoilValue(selectedRowIdsSelector());
 
   const handleToggleColumnFilter = useHandleToggleColumnFilter({
     objectNameSingular,
@@ -64,6 +50,8 @@ export const RecordIndexTableContainerEffect = ({
     objectNameSingular,
     viewBarId,
   });
+
+  const { currentViewWithSavedFiltersAndSorts } = useGetCurrentView();
 
   useEffect(() => {
     setOnToggleColumnFilter(
@@ -81,23 +69,58 @@ export const RecordIndexTableContainerEffect = ({
 
   useEffect(() => {
     setOnEntityCountChange(
-      () => (entityCount: number) => setRecordCountInCurrentView(entityCount),
+      () => (entityCount: number, currentRecordGroupId?: string) =>
+        setRecordIndexEntityCount(entityCount, currentRecordGroupId),
     );
-  }, [setRecordCountInCurrentView, setOnEntityCountChange]);
+  }, [setRecordIndexEntityCount, setOnEntityCountChange]);
+
+  const setViewFieldAggregateOperation = useRecoilCallback(
+    ({ set, snapshot }) =>
+      (viewField: ViewField) => {
+        const aggregateOperationForViewField = snapshot
+          .getLoadable(
+            viewFieldAggregateOperationState({
+              viewFieldId: viewField.id,
+            }),
+          )
+          .getValue();
+
+        const viewFieldMetadataType = columnDefinitions.find(
+          (columnDefinition) =>
+            columnDefinition.fieldMetadataId === viewField.fieldMetadataId,
+        )?.type;
+
+        const convertedViewFieldAggregateOperation = isDefined(
+          viewField.aggregateOperation,
+        )
+          ? convertAggregateOperationToExtendedAggregateOperation(
+              viewField.aggregateOperation,
+              viewFieldMetadataType,
+            )
+          : viewField.aggregateOperation;
+
+        if (
+          aggregateOperationForViewField !==
+          convertedViewFieldAggregateOperation
+        ) {
+          set(
+            viewFieldAggregateOperationState({
+              viewFieldId: viewField.id,
+            }),
+            convertedViewFieldAggregateOperation,
+          );
+        }
+      },
+    [columnDefinitions],
+  );
 
   useEffect(() => {
-    setContextStoreTargetedRecordIds(selectedRowIds);
-    setContextStoreCurrentObjectMetadataItem(objectMetadataItem?.id);
-
-    return () => {
-      setContextStoreTargetedRecordIds([]);
-      setContextStoreCurrentObjectMetadataItem(null);
-    };
+    currentViewWithSavedFiltersAndSorts?.viewFields.forEach((viewField) => {
+      setViewFieldAggregateOperation(viewField);
+    });
   }, [
-    objectMetadataItem?.id,
-    selectedRowIds,
-    setContextStoreCurrentObjectMetadataItem,
-    setContextStoreTargetedRecordIds,
+    currentViewWithSavedFiltersAndSorts?.viewFields,
+    setViewFieldAggregateOperation,
   ]);
 
   return <></>;

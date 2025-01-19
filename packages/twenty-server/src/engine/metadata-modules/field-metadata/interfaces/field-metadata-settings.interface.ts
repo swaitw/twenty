@@ -1,4 +1,4 @@
-import { FieldMetadataType } from 'src/engine/metadata-modules/field-metadata/field-metadata.entity';
+import { FieldMetadataType } from 'twenty-shared';
 
 export enum NumberDataType {
   FLOAT = 'float',
@@ -6,20 +6,27 @@ export enum NumberDataType {
   BIGINT = 'bigint',
 }
 
-type FieldMetadataDefaultSettings = {
+export type FieldMetadataDefaultSettings = {
   isForeignKey?: boolean;
 };
 
-type FieldMetadataNumberSettings = {
+export type FieldNumberVariant = 'number' | 'percentage';
+
+export type FieldMetadataNumberSettings = {
   dataType: NumberDataType;
   decimals?: number;
+  type?: FieldNumberVariant;
 };
 
-type FieldMetadataDateSettings = {
+export type FieldMetadataTextSettings = {
+  displayedMaxRows?: number;
+};
+
+export type FieldMetadataDateSettings = {
   displayAsRelativeDate?: boolean;
 };
 
-type FieldMetadataDateTimeSettings = {
+export type FieldMetadataDateTimeSettings = {
   displayAsRelativeDate?: boolean;
 };
 
@@ -27,6 +34,7 @@ type FieldMetadataSettingsMapping = {
   [FieldMetadataType.NUMBER]: FieldMetadataNumberSettings;
   [FieldMetadataType.DATE]: FieldMetadataDateSettings;
   [FieldMetadataType.DATE_TIME]: FieldMetadataDateTimeSettings;
+  [FieldMetadataType.TEXT]: FieldMetadataTextSettings;
 };
 
 type SettingsByFieldMetadata<T extends FieldMetadataType | 'default'> =

@@ -38,30 +38,10 @@ export const seedFeatureFlags = async (
       {
         key: FeatureFlagKey.IsFunctionSettingsEnabled,
         workspaceId: workspaceId,
-        value: true,
-      },
-      {
-        key: FeatureFlagKey.IsWorkflowEnabled,
-        workspaceId: workspaceId,
-        value: true,
-      },
-      {
-        key: FeatureFlagKey.IsMessageThreadSubscriberEnabled,
-        workspaceId: workspaceId,
         value: false,
       },
       {
-        key: FeatureFlagKey.IsWorkspaceFavoriteEnabled,
-        workspaceId: workspaceId,
-        value: true,
-      },
-      {
-        key: FeatureFlagKey.IsSearchEnabled,
-        workspaceId: workspaceId,
-        value: true,
-      },
-      {
-        key: FeatureFlagKey.IsWorkspaceMigratedForSearch,
+        key: FeatureFlagKey.IsWorkflowEnabled,
         workspaceId: workspaceId,
         value: true,
       },
@@ -79,6 +59,26 @@ export const seedFeatureFlags = async (
         key: FeatureFlagKey.IsUniqueIndexesEnabled,
         workspaceId: workspaceId,
         value: false,
+      },
+      {
+        key: FeatureFlagKey.IsMicrosoftSyncEnabled,
+        workspaceId: workspaceId,
+        value: true,
+      },
+      {
+        key: FeatureFlagKey.IsAdvancedFiltersEnabled,
+        workspaceId: workspaceId,
+        value: false,
+      },
+      {
+        key: FeatureFlagKey.IsCommandMenuV2Enabled,
+        workspaceId: workspaceId,
+        value: true,
+      },
+      {
+        key: FeatureFlagKey.IsLocalizationEnabled,
+        workspaceId: workspaceId,
+        value: true,
       },
     ])
     .execute();

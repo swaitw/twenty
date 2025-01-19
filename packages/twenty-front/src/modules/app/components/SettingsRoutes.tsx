@@ -2,7 +2,6 @@ import { lazy, Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
 
 import { SettingsSkeletonLoader } from '@/settings/components/SettingsSkeletonLoader';
-import { AppPath } from '@/types/AppPath';
 import { SettingsPath } from '@/types/SettingsPath';
 
 const SettingsAccountsCalendars = lazy(() =>
@@ -83,11 +82,11 @@ const SettingsServerlessFunctions = lazy(() =>
   ).then((module) => ({ default: module.SettingsServerlessFunctions })),
 );
 
-const SettingsServerlessFunctionDetailWrapper = lazy(() =>
+const SettingsServerlessFunctionDetail = lazy(() =>
   import(
-    '~/pages/settings/serverless-functions/SettingsServerlessFunctionDetailWrapper'
+    '~/pages/settings/serverless-functions/SettingsServerlessFunctionDetail'
   ).then((module) => ({
-    default: module.SettingsServerlessFunctionDetailWrapper,
+    default: module.SettingsServerlessFunctionDetail,
   })),
 );
 
@@ -105,6 +104,12 @@ const SettingsWorkspace = lazy(() =>
   })),
 );
 
+const SettingsDomain = lazy(() =>
+  import('~/pages/settings/workspace/SettingsDomain').then((module) => ({
+    default: module.SettingsDomain,
+  })),
+);
+
 const SettingsWorkspaceMembers = lazy(() =>
   import('~/pages/settings/SettingsWorkspaceMembers').then((module) => ({
     default: module.SettingsWorkspaceMembers,
@@ -117,11 +122,11 @@ const SettingsProfile = lazy(() =>
   })),
 );
 
-const SettingsAppearance = lazy(() =>
+const SettingsExperience = lazy(() =>
   import(
-    '~/pages/settings/profile/appearance/components/SettingsAppearance'
+    '~/pages/settings/profile/appearance/components/SettingsExperience'
   ).then((module) => ({
-    default: module.SettingsAppearance,
+    default: module.SettingsExperience,
   })),
 );
 
@@ -140,12 +145,6 @@ const SettingsBilling = lazy(() =>
 const SettingsDevelopers = lazy(() =>
   import('~/pages/settings/developers/SettingsDevelopers').then((module) => ({
     default: module.SettingsDevelopers,
-  })),
-);
-
-const SettingsObjectEdit = lazy(() =>
-  import('~/pages/settings/data-model/SettingsObjectEdit').then((module) => ({
-    default: module.SettingsObjectEdit,
   })),
 );
 
@@ -226,29 +225,49 @@ const SettingsObjectFieldEdit = lazy(() =>
   ),
 );
 
-const SettingsCRMMigration = lazy(() =>
-  import('~/pages/settings/crm-migration/SettingsCRMMigration').then(
+const SettingsSecurity = lazy(() =>
+  import('~/pages/settings/security/SettingsSecurity').then((module) => ({
+    default: module.SettingsSecurity,
+  })),
+);
+
+const SettingsSecuritySSOIdentifyProvider = lazy(() =>
+  import('~/pages/settings/security/SettingsSecuritySSOIdentifyProvider').then(
     (module) => ({
-      default: module.SettingsCRMMigration,
+      default: module.SettingsSecuritySSOIdentifyProvider,
+    }),
+  ),
+);
+
+const SettingsAdmin = lazy(() =>
+  import('~/pages/settings/admin-panel/SettingsAdmin').then((module) => ({
+    default: module.SettingsAdmin,
+  })),
+);
+
+const SettingsAdminContent = lazy(() =>
+  import('@/settings/admin-panel/components/SettingsAdminContent').then(
+    (module) => ({
+      default: module.SettingsAdminContent,
     }),
   ),
 );
 
 type SettingsRoutesProps = {
   isBillingEnabled?: boolean;
-  isCRMMigrationEnabled?: boolean;
   isServerlessFunctionSettingsEnabled?: boolean;
+  isAdminPageEnabled?: boolean;
 };
 
 export const SettingsRoutes = ({
   isBillingEnabled,
-  isCRMMigrationEnabled,
   isServerlessFunctionSettingsEnabled,
+  isAdminPageEnabled,
 }: SettingsRoutesProps) => (
   <Suspense fallback={<SettingsSkeletonLoader />}>
     <Routes>
       <Route path={SettingsPath.ProfilePage} element={<SettingsProfile />} />
-      <Route path={SettingsPath.Appearance} element={<SettingsAppearance />} />
+      <Route path={SettingsPath.Experience} element={<SettingsExperience />} />
       <Route path={SettingsPath.Accounts} element={<SettingsAccounts />} />
       <Route path={SettingsPath.NewAccount} element={<SettingsNewAccount />} />
       <Route
@@ -262,6 +281,8 @@ export const SettingsRoutes = ({
       {isBillingEnabled && (
         <Route path={SettingsPath.Billing} element={<SettingsBilling />} />
       )}
+      <Route path={SettingsPath.Workspace} element={<SettingsWorkspace />} />
+      <Route path={SettingsPath.Domain} element={<SettingsDomain />} />
       <Route
         path={SettingsPath.WorkspaceMembersPage}
         element={<SettingsWorkspaceMembers />}
@@ -276,37 +297,24 @@ export const SettingsRoutes = ({
         path={SettingsPath.ObjectDetail}
         element={<SettingsObjectDetailPage />}
       />
-      <Route path={SettingsPath.ObjectEdit} element={<SettingsObjectEdit />} />
       <Route path={SettingsPath.NewObject} element={<SettingsNewObject />} />
       <Route path={SettingsPath.Developers} element={<SettingsDevelopers />} />
-      {isCRMMigrationEnabled && (
-        <Route
-          path={SettingsPath.CRMMigration}
-          element={<SettingsCRMMigration />}
-        />
-      )}
+
       <Route
-        path={AppPath.DevelopersCatchAll}
-        element={
-          <Routes>
-            <Route
-              path={SettingsPath.DevelopersNewApiKey}
-              element={<SettingsDevelopersApiKeysNew />}
-            />
-            <Route
-              path={SettingsPath.DevelopersApiKeyDetail}
-              element={<SettingsDevelopersApiKeyDetail />}
-            />
-            <Route
-              path={SettingsPath.DevelopersNewWebhook}
-              element={<SettingsDevelopersWebhooksNew />}
-            />
-            <Route
-              path={SettingsPath.DevelopersNewWebhookDetail}
-              element={<SettingsDevelopersWebhooksDetail />}
-            />
-          </Routes>
-        }
+        path={SettingsPath.DevelopersNewApiKey}
+        element={<SettingsDevelopersApiKeysNew />}
+      />
+      <Route
+        path={SettingsPath.DevelopersApiKeyDetail}
+        element={<SettingsDevelopersApiKeyDetail />}
+      />
+      <Route
+        path={SettingsPath.DevelopersNewWebhook}
+        element={<SettingsDevelopersWebhooksNew />}
+      />
+      <Route
+        path={SettingsPath.DevelopersNewWebhookDetail}
+        element={<SettingsDevelopersWebhooksDetail />}
       />
       {isServerlessFunctionSettingsEnabled && (
         <>
@@ -320,7 +328,7 @@ export const SettingsRoutes = ({
           />
           <Route
             path={SettingsPath.ServerlessFunctionDetail}
-            element={<SettingsServerlessFunctionDetailWrapper />}
+            element={<SettingsServerlessFunctionDetail />}
           />
         </>
       )}
@@ -357,6 +365,20 @@ export const SettingsRoutes = ({
         element={<SettingsObjectFieldEdit />}
       />
       <Route path={SettingsPath.Releases} element={<Releases />} />
+      <Route path={SettingsPath.Security} element={<SettingsSecurity />} />
+      <Route
+        path={SettingsPath.NewSSOIdentityProvider}
+        element={<SettingsSecuritySSOIdentifyProvider />}
+      />
+      {isAdminPageEnabled && (
+        <>
+          <Route path={SettingsPath.AdminPanel} element={<SettingsAdmin />} />
+          <Route
+            path={SettingsPath.FeatureFlags}
+            element={<SettingsAdminContent />}
+          />
+        </>
+      )}
     </Routes>
   </Suspense>
 );

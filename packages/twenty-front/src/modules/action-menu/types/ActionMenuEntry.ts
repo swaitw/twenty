@@ -1,14 +1,29 @@
-import { MouseEvent, ReactNode } from 'react';
-import { IconComponent } from 'twenty-ui';
+import { ActionViewType } from '@/action-menu/actions/types/ActionViewType';
+import { ConfirmationModalProps } from '@/ui/layout/modal/components/ConfirmationModal';
+import { MouseEvent, ReactElement } from 'react';
+import { IconComponent, MenuItemAccent } from 'twenty-ui';
 
-import { MenuItemAccent } from '@/ui/navigation/menu-item/types/MenuItemAccent';
+export enum ActionMenuEntryType {
+  Standard = 'Standard',
+  WorkflowRun = 'WorkflowRun',
+}
+
+export enum ActionMenuEntryScope {
+  Global = 'Global',
+  RecordSelection = 'RecordSelection',
+}
 
 export type ActionMenuEntry = {
+  type: ActionMenuEntryType;
+  scope: ActionMenuEntryScope;
   key: string;
   label: string;
+  shortLabel?: string;
   position: number;
   Icon: IconComponent;
+  isPinned?: boolean;
   accent?: MenuItemAccent;
+  availableOn?: ActionViewType[];
   onClick?: (event?: MouseEvent<HTMLElement>) => void;
-  ConfirmationModal?: ReactNode;
+  ConfirmationModal?: ReactElement<ConfirmationModalProps>;
 };

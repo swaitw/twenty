@@ -7,6 +7,8 @@ import { currentWorkspaceMemberState } from '@/auth/states/currentWorkspaceMembe
 import { currentWorkspaceState } from '@/auth/states/currentWorkspaceState';
 import { isCurrentUserLoadedState } from '@/auth/states/isCurrentUserLoadingState';
 import { workspacesState } from '@/auth/states/workspaces';
+import { DateFormat } from '@/localization/constants/DateFormat';
+import { TimeFormat } from '@/localization/constants/TimeFormat';
 import { dateTimeFormatState } from '@/localization/states/dateTimeFormatState';
 import { detectDateFormat } from '@/localization/utils/detectDateFormat';
 import { detectTimeFormat } from '@/localization/utils/detectTimeFormat';
@@ -16,6 +18,7 @@ import { getTimeFormatFromWorkspaceTimeFormat } from '@/localization/utils/getTi
 import { ColorScheme } from '@/workspace-member/types/WorkspaceMember';
 import { WorkspaceMember } from '~/generated-metadata/graphql';
 import { useGetCurrentUserQuery } from '~/generated/graphql';
+import { dynamicActivate } from '~/utils/i18n/dynamicActivate';
 import { isDefined } from '~/utils/isDefined';
 
 export const UserProviderEffect = () => {
@@ -50,7 +53,10 @@ export const UserProviderEffect = () => {
     if (!isDefined(queryData?.currentUser)) return;
 
     setCurrentUser(queryData.currentUser);
-    setCurrentWorkspace(queryData.currentUser.defaultWorkspace);
+
+    if (isDefined(queryData.currentUser.currentWorkspace)) {
+      setCurrentWorkspace(queryData.currentUser.currentWorkspace);
+    }
 
     const {
       workspaceMember,
@@ -81,11 +87,13 @@ export const UserProviderEffect = () => {
             : detectTimeZone(),
         dateFormat: isDefined(workspaceMember.dateFormat)
           ? getDateFormatFromWorkspaceDateFormat(workspaceMember.dateFormat)
-          : detectDateFormat(),
+          : DateFormat[detectDateFormat()],
         timeFormat: isDefined(workspaceMember.timeFormat)
           ? getTimeFormatFromWorkspaceTimeFormat(workspaceMember.timeFormat)
-          : detectTimeFormat(),
+          : TimeFormat[detectTimeFormat()],
       });
+
+      dynamicActivate(workspaceMember.locale ?? 'en');
     }
 
     if (isDefined(workspaceMembers)) {

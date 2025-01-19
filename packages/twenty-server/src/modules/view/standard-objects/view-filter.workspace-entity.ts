@@ -1,6 +1,7 @@
+import { FieldMetadataType } from 'twenty-shared';
+
 import { Relation } from 'src/engine/workspace-manager/workspace-sync-metadata/interfaces/relation.interface';
 
-import { FieldMetadataType } from 'src/engine/metadata-modules/field-metadata/field-metadata.entity';
 import { RelationMetadataType } from 'src/engine/metadata-modules/relation-metadata/relation-metadata.entity';
 import { BaseWorkspaceEntity } from 'src/engine/twenty-orm/base.workspace-entity';
 import { WorkspaceEntity } from 'src/engine/twenty-orm/decorators/workspace-entity.decorator';
@@ -11,6 +12,7 @@ import { WorkspaceIsSystem } from 'src/engine/twenty-orm/decorators/workspace-is
 import { WorkspaceJoinColumn } from 'src/engine/twenty-orm/decorators/workspace-join-column.decorator';
 import { WorkspaceRelation } from 'src/engine/twenty-orm/decorators/workspace-relation.decorator';
 import { VIEW_FILTER_STANDARD_FIELD_IDS } from 'src/engine/workspace-manager/workspace-sync-metadata/constants/standard-field-ids';
+import { STANDARD_OBJECT_ICONS } from 'src/engine/workspace-manager/workspace-sync-metadata/constants/standard-object-icons';
 import { STANDARD_OBJECT_IDS } from 'src/engine/workspace-manager/workspace-sync-metadata/constants/standard-object-ids';
 import { ViewWorkspaceEntity } from 'src/modules/view/standard-objects/view.workspace-entity';
 
@@ -20,7 +22,7 @@ import { ViewWorkspaceEntity } from 'src/modules/view/standard-objects/view.work
   labelSingular: 'View Filter',
   labelPlural: 'View Filters',
   description: '(System) View Filters',
-  icon: 'IconFilterBolt',
+  icon: STANDARD_OBJECT_ICONS.viewFilter,
 })
 @WorkspaceIsNotAuditLogged()
 @WorkspaceIsSystem()
@@ -72,4 +74,24 @@ export class ViewFilterWorkspaceEntity extends BaseWorkspaceEntity {
 
   @WorkspaceJoinColumn('view')
   viewId: string | null;
+
+  @WorkspaceField({
+    standardId: VIEW_FILTER_STANDARD_FIELD_IDS.viewFilterGroupId,
+    type: FieldMetadataType.UUID,
+    label: 'View Filter Group Id',
+    description: 'View Filter Group',
+  })
+  @WorkspaceIsNullable()
+  viewFilterGroupId: string | null;
+
+  @WorkspaceField({
+    standardId: VIEW_FILTER_STANDARD_FIELD_IDS.positionInViewFilterGroup,
+    type: FieldMetadataType.POSITION,
+    label: 'Position in view filter group',
+    description: 'Position in the view filter group',
+    icon: 'IconHierarchy2',
+  })
+  @WorkspaceIsSystem()
+  @WorkspaceIsNullable()
+  positionInViewFilterGroup: number | null;
 }

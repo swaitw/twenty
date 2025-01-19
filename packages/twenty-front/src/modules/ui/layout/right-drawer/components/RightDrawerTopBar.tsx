@@ -9,7 +9,6 @@ import { isNewViewableRecordLoadingState } from '@/object-record/record-right-dr
 import { viewableRecordIdState } from '@/object-record/record-right-drawer/states/viewableRecordIdState';
 import { viewableRecordNameSingularState } from '@/object-record/record-right-drawer/states/viewableRecordNameSingularState';
 import { RightDrawerTopBarCloseButton } from '@/ui/layout/right-drawer/components/RightDrawerTopBarCloseButton';
-import { RightDrawerTopBarDropdownButton } from '@/ui/layout/right-drawer/components/RightDrawerTopBarDropdownButton';
 import { RightDrawerTopBarExpandButton } from '@/ui/layout/right-drawer/components/RightDrawerTopBarExpandButton';
 import { RightDrawerTopBarMinimizeButton } from '@/ui/layout/right-drawer/components/RightDrawerTopBarMinimizeButton';
 import { StyledRightDrawerTopBar } from '@/ui/layout/right-drawer/components/StyledRightDrawerTopBar';
@@ -85,13 +84,14 @@ export const RightDrawerTopBar = () => {
 
   const ObjectIcon = getIcon(objectMetadataItem.icon);
 
-  const label =
-    rightDrawerPage === RightDrawerPages.ViewRecord
-      ? objectMetadataItem.labelSingular
-      : RIGHT_DRAWER_PAGE_TITLES[rightDrawerPage];
+  const isViewRecordRightDrawerPage =
+    rightDrawerPage === RightDrawerPages.ViewRecord;
 
-  const Icon =
-    rightDrawerPage === RightDrawerPages.ViewRecord ? ObjectIcon : PageIcon;
+  const label = isViewRecordRightDrawerPage
+    ? objectMetadataItem.labelSingular
+    : RIGHT_DRAWER_PAGE_TITLES[rightDrawerPage];
+
+  const Icon = isViewRecordRightDrawerPage ? ObjectIcon : PageIcon;
 
   return (
     <StyledRightDrawerTopBar
@@ -117,20 +117,22 @@ export const RightDrawerTopBar = () => {
         </StyledMinimizeTopBarTitleContainer>
       )}
       <StyledTopBarWrapper>
-        <RightDrawerTopBarDropdownButton />
         {!isMobile && !isRightDrawerMinimized && (
           <RightDrawerTopBarMinimizeButton />
         )}
 
-        {!isMobile && !isRightDrawerMinimized && (
-          <RightDrawerTopBarExpandButton
-            to={
-              getBasePathToShowPage({
-                objectNameSingular: viewableRecordNameSingular ?? '',
-              }) + viewableRecordId
-            }
-          />
-        )}
+        {!isMobile &&
+          !isRightDrawerMinimized &&
+          isViewRecordRightDrawerPage && (
+            <RightDrawerTopBarExpandButton
+              to={
+                getBasePathToShowPage({
+                  objectNameSingular: viewableRecordNameSingular ?? '',
+                }) + viewableRecordId
+              }
+            />
+          )}
+
         <RightDrawerTopBarCloseButton />
       </StyledTopBarWrapper>
     </StyledRightDrawerTopBar>

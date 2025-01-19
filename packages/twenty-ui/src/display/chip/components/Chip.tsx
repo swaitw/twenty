@@ -64,14 +64,14 @@ const StyledContainer = withTheme(styled.div<
           : 'inherit'};
 
   display: inline-flex;
-  justify-content: center;
+  justify-content: flex-start;
   gap: ${({ theme }) => theme.spacing(1)};
-  height: ${({ theme }) => theme.spacing(3)};
+  height: ${({ theme, size }) =>
+    size === ChipSize.Large ? theme.spacing(4) : theme.spacing(3)};
   max-width: ${({ maxWidth }) =>
     maxWidth
       ? `calc(${maxWidth}px - 2 * var(--chip-horizontal-padding))`
       : '200px'};
-
   overflow: hidden;
   padding: var(--chip-vertical-padding) var(--chip-horizontal-padding);
   user-select: none;
@@ -115,6 +115,11 @@ const StyledContainer = withTheme(styled.div<
   & > svg {
     flex-shrink: 0;
   }
+
+  padding-left: ${({ theme, variant }) =>
+    variant === ChipVariant.Transparent
+      ? theme.spacing(0)
+      : 'var(--chip-horizontal-padding)'};
 `);
 
 export const Chip = ({
@@ -128,6 +133,7 @@ export const Chip = ({
   accent = ChipAccent.TextPrimary,
   onClick,
   className,
+  maxWidth,
 }: ChipProps) => {
   return (
     <StyledContainer
@@ -139,12 +145,10 @@ export const Chip = ({
       variant={variant}
       onClick={onClick}
       className={className}
+      maxWidth={maxWidth}
     >
       {leftComponent}
-      <OverflowingTextWithTooltip
-        size={size === ChipSize.Large ? 'large' : 'small'}
-        text={label}
-      />
+      <OverflowingTextWithTooltip size={size} text={label} />
       {rightComponent}
     </StyledContainer>
   );

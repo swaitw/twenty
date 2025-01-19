@@ -1,24 +1,31 @@
 import styled from '@emotion/styled';
-import { useContext } from 'react';
 
 import { DropdownMenuItemsContainer } from '@/ui/layout/dropdown/components/DropdownMenuItemsContainer';
 
+import { useAdvancedFilterDropdown } from '@/object-record/advanced-filter/hooks/useAdvancedFilterDropdown';
+import { AdvancedFilterButton } from '@/object-record/object-filter-dropdown/components/AdvancedFilterButton';
 import { ObjectFilterDropdownFilterSelectMenuItem } from '@/object-record/object-filter-dropdown/components/ObjectFilterDropdownFilterSelectMenuItem';
 import { OBJECT_FILTER_DROPDOWN_ID } from '@/object-record/object-filter-dropdown/constants/ObjectFilterDropdownId';
-import { useFilterDropdown } from '@/object-record/object-filter-dropdown/hooks/useFilterDropdown';
-import { useSelectFilter } from '@/object-record/object-filter-dropdown/hooks/useSelectFilter';
-import { FiltersHotkeyScope } from '@/object-record/object-filter-dropdown/types/FiltersHotkeyScope';
-import { RecordIndexRootPropsContext } from '@/object-record/record-index/contexts/RecordIndexRootPropsContext';
-import { useRecordTableStates } from '@/object-record/record-table/hooks/internal/useRecordTableStates';
+import { useSelectFilterDefinitionUsedInDropdown } from '@/object-record/object-filter-dropdown/hooks/useSelectFilterDefinitionUsedInDropdown';
+import { objectFilterDropdownSearchInputComponentState } from '@/object-record/object-filter-dropdown/states/objectFilterDropdownSearchInputComponentState';
+
+import { useRecordIndexContextOrThrow } from '@/object-record/record-index/contexts/RecordIndexContext';
+import { hiddenTableColumnsComponentSelector } from '@/object-record/record-table/states/selectors/hiddenTableColumnsComponentSelector';
+import { visibleTableColumnsComponentSelector } from '@/object-record/record-table/states/selectors/visibleTableColumnsComponentSelector';
 import { DropdownMenuSeparator } from '@/ui/layout/dropdown/components/DropdownMenuSeparator';
 import { SelectableItem } from '@/ui/layout/selectable-list/components/SelectableItem';
 import { SelectableList } from '@/ui/layout/selectable-list/components/SelectableList';
 import { useSelectableList } from '@/ui/layout/selectable-list/hooks/useSelectableList';
 import { useRecoilComponentValueV2 } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValueV2';
+import { useSetRecoilComponentStateV2 } from '@/ui/utilities/state/component-state/hooks/useSetRecoilComponentStateV2';
+import { useGetCurrentView } from '@/views/hooks/useGetCurrentView';
 import { availableFilterDefinitionsComponentState } from '@/views/states/availableFilterDefinitionsComponentState';
-import { useRecoilValue } from 'recoil';
+import { useIsFeatureEnabled } from '@/workspace/hooks/useIsFeatureEnabled';
 import { isDefined } from 'twenty-ui';
+import { FeatureFlagKey } from '~/generated/graphql';
 
+import { advancedFilterViewFilterIdComponentState } from '@/object-record/object-filter-dropdown/states/advancedFilterViewFilterIdComponentState';
+import { FiltersHotkeyScope } from '@/object-record/object-filter-dropdown/types/FiltersHotkeyScope';
 export const StyledInput = styled.input`
   background: transparent;
   border: none;
@@ -31,7 +38,7 @@ export const StyledInput = styled.input`
   margin: 0;
   outline: none;
   padding: ${({ theme }) => theme.spacing(2)};
-  height: 19px;
+  min-height: 19px;
   font-family: inherit;
   font-size: ${({ theme }) => theme.font.size.sm};
 
@@ -45,28 +52,46 @@ export const StyledInput = styled.input`
   }
 `;
 
-export const ObjectFilterDropdownFilterSelect = () => {
-  const {
-    setObjectFilterDropdownSearchInput,
-    objectFilterDropdownSearchInputState,
-  } = useFilterDropdown();
+type ObjectFilterDropdownFilterSelectProps = {
+  isAdvancedFilterButtonVisible?: boolean;
+};
 
-  const objectFilterDropdownSearchInput = useRecoilValue(
-    objectFilterDropdownSearchInputState,
+export const ObjectFilterDropdownFilterSelect = ({
+  isAdvancedFilterButtonVisible,
+}: ObjectFilterDropdownFilterSelectProps) => {
+  const { recordIndexId } = useRecordIndexContextOrThrow();
+
+  const setObjectFilterDropdownSearchInput = useSetRecoilComponentStateV2(
+    objectFilterDropdownSearchInputComponentState,
+  );
+
+  const advancedFilterViewFilterId = useRecoilComponentValueV2(
+    advancedFilterViewFilterIdComponentState,
+  );
+
+  const objectFilterDropdownSearchInput = useRecoilComponentValueV2(
+    objectFilterDropdownSearchInputComponentState,
+  );
+
+  const { closeAdvancedFilterDropdown } = useAdvancedFilterDropdown(
+    advancedFilterViewFilterId,
   );
 
   const availableFilterDefinitions = useRecoilComponentValueV2(
     availableFilterDefinitionsComponentState,
   );
-  const { recordIndexId } = useContext(RecordIndexRootPropsContext);
-  const { hiddenTableColumnsSelector, visibleTableColumnsSelector } =
-    useRecordTableStates(recordIndexId);
 
-  const visibleTableColumns = useRecoilValue(visibleTableColumnsSelector());
+  const visibleTableColumns = useRecoilComponentValueV2(
+    visibleTableColumnsComponentSelector,
+    recordIndexId,
+  );
   const visibleColumnsIds = visibleTableColumns.map(
     (column) => column.fieldMetadataId,
   );
-  const hiddenTableColumns = useRecoilValue(hiddenTableColumnsSelector());
+  const hiddenTableColumns = useRecoilComponentValueV2(
+    hiddenTableColumnsComponentSelector,
+    recordIndexId,
+  );
   const hiddenColumnIds = hiddenTableColumns.map(
     (column) => column.fieldMetadataId,
   );
@@ -96,7 +121,8 @@ export const ObjectFilterDropdownFilterSelect = () => {
     (item) => item.fieldMetadataId,
   );
 
-  const { selectFilter } = useSelectFilter();
+  const { selectFilterDefinitionUsedInDropdown } =
+    useSelectFilterDefinitionUsedInDropdown();
 
   const { resetSelectedItem } = useSelectableList(OBJECT_FILTER_DROPDOWN_ID);
 
@@ -111,12 +137,29 @@ export const ObjectFilterDropdownFilterSelect = () => {
 
     resetSelectedItem();
 
-    selectFilter({ filterDefinition: selectedFilterDefinition });
+    selectFilterDefinitionUsedInDropdown({
+      filterDefinition: selectedFilterDefinition,
+    });
+
+    closeAdvancedFilterDropdown();
   };
 
   const shoudShowSeparator =
     visibleColumnsFilterDefinitions.length > 0 &&
     hiddenColumnsFilterDefinitions.length > 0;
+
+  const { currentViewId, currentViewWithCombinedFiltersAndSorts } =
+    useGetCurrentView();
+
+  const isAdvancedFiltersEnabled = useIsFeatureEnabled(
+    FeatureFlagKey.IsAdvancedFiltersEnabled,
+  );
+
+  const shouldShowAdvancedFilterButton =
+    isDefined(currentViewId) &&
+    isDefined(currentViewWithCombinedFiltersAndSorts?.objectMetadataId) &&
+    isAdvancedFilterButtonVisible &&
+    isAdvancedFiltersEnabled;
 
   return (
     <>
@@ -147,9 +190,7 @@ export const ObjectFilterDropdownFilterSelect = () => {
               </SelectableItem>
             ),
           )}
-        </DropdownMenuItemsContainer>
-        {shoudShowSeparator && <DropdownMenuSeparator />}
-        <DropdownMenuItemsContainer>
+          {shoudShowSeparator && <DropdownMenuSeparator />}
           {hiddenColumnsFilterDefinitions.map(
             (hiddenFilterDefinition, index) => (
               <SelectableItem
@@ -164,6 +205,7 @@ export const ObjectFilterDropdownFilterSelect = () => {
           )}
         </DropdownMenuItemsContainer>
       </SelectableList>
+      {shouldShowAdvancedFilterButton && <AdvancedFilterButton />}
     </>
   );
 };

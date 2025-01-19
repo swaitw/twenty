@@ -5,7 +5,9 @@ import styled from '@emotion/styled';
 import { ReactNode } from 'react';
 import { isDefined } from '~/utils/isDefined';
 
-const StyledSettingsPageContainer = styled.div<{ width?: number }>`
+const StyledSettingsPageContainer = styled.div<{
+  width?: number;
+}>`
   display: flex;
   flex-direction: column;
   gap: ${({ theme }) => theme.spacing(8)};
@@ -28,7 +30,10 @@ export const SettingsPageContainer = ({
 }: {
   children: ReactNode;
 }) => (
-  <ScrollWrapper contextProviderName="settingsPageContainer">
+  <ScrollWrapper
+    contextProviderName="settingsPageContainer"
+    componentInstanceId={'scroll-wrapper-settings-page-container'}
+  >
     <StyledSettingsPageContainer>{children}</StyledSettingsPageContainer>
   </ScrollWrapper>
 );

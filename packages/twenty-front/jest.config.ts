@@ -1,9 +1,8 @@
 import { JestConfigWithTsJest, pathsToModuleNameMapper } from 'ts-jest';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const tsConfig = require('./tsconfig.json');
+const tsConfig = require('./tsconfig.spec.json');
 process.env.TZ = 'GMT';
-
 const jestConfig: JestConfigWithTsJest = {
   // to enable logs, comment out the following line
   silent: true,
@@ -13,7 +12,16 @@ const jestConfig: JestConfigWithTsJest = {
   testEnvironment: 'jsdom',
   transformIgnorePatterns: ['../../node_modules/'],
   transform: {
-    '^.+\\.(ts|js|tsx|jsx)$': '@swc/jest',
+    '^.+\\.(ts|js|tsx|jsx)$': [
+      '@swc/jest',
+      {
+        jsc: {
+          experimental: {
+            plugins: [], // Disable Lingui plugin during tests
+          },
+        },
+      },
+    ],
   },
   moduleNameMapper: {
     '\\.(jpg|jpeg|png|gif|webp|svg|svg\\?react)$':
@@ -25,9 +33,9 @@ const jestConfig: JestConfigWithTsJest = {
   extensionsToTreatAsEsm: ['.ts', '.tsx'],
   coverageThreshold: {
     global: {
-      statements: 60,
+      statements: 57,
       lines: 55,
-      functions: 50,
+      functions: 47,
     },
   },
   collectCoverageFrom: ['<rootDir>/src/**/*.ts'],

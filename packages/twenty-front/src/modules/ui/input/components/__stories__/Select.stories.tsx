@@ -1,16 +1,15 @@
-import { useState } from 'react';
 import { Meta, StoryObj } from '@storybook/react';
 import { userEvent, within } from '@storybook/test';
-import { ComponentDecorator } from 'twenty-ui';
+import { useState } from 'react';
+import { ComponentDecorator, IconPlus } from 'twenty-ui';
 
 import { Select, SelectProps } from '../Select';
-import { IconPlus } from 'packages/twenty-ui';
 
-type RenderProps = SelectProps<string | number | null>;
+type RenderProps = SelectProps<string | number | boolean | null>;
 
 const Render = (args: RenderProps) => {
   const [value, setValue] = useState(args.value);
-  const handleChange = (value: string | number | null) => {
+  const handleChange = (value: string | number | boolean | null) => {
     args.onChange?.(value);
     setValue(value);
   };

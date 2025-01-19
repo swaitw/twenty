@@ -1,5 +1,5 @@
-import { gql } from '@apollo/client';
 import * as Apollo from '@apollo/client';
+import { gql } from '@apollo/client';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
@@ -29,6 +29,16 @@ export type Analytics = {
   __typename?: 'Analytics';
   /** Boolean that confirms query was dispatched */
   success: Scalars['Boolean'];
+};
+
+export type AnalyticsTinybirdJwtMap = {
+  __typename?: 'AnalyticsTinybirdJwtMap';
+  getPageviewsAnalytics: Scalars['String'];
+  getServerlessFunctionDuration: Scalars['String'];
+  getServerlessFunctionErrorCount: Scalars['String'];
+  getServerlessFunctionSuccessRate: Scalars['String'];
+  getUsersAnalytics: Scalars['String'];
+  getWebhookAnalytics: Scalars['String'];
 };
 
 export type ApiConfig = {
@@ -64,6 +74,7 @@ export type AuthProviders = {
   magicLink: Scalars['Boolean'];
   microsoft: Scalars['Boolean'];
   password: Scalars['Boolean'];
+  sso: Array<SsoIdentityProvider>;
 };
 
 export type AuthToken = {
@@ -88,12 +99,27 @@ export type AuthorizeApp = {
   redirectUrl: Scalars['String'];
 };
 
+export type AvailableWorkspaceOutput = {
+  __typename?: 'AvailableWorkspaceOutput';
+  displayName?: Maybe<Scalars['String']>;
+  id: Scalars['String'];
+  logo?: Maybe<Scalars['String']>;
+  sso: Array<SsoConnection>;
+  subdomain: Scalars['String'];
+};
+
 export type Billing = {
   __typename?: 'Billing';
-  billingFreeTrialDurationInDays?: Maybe<Scalars['Float']>;
   billingUrl?: Maybe<Scalars['String']>;
   isBillingEnabled: Scalars['Boolean'];
+  trialPeriods: Array<TrialPeriodDto>;
 };
+
+/** The different billing plans available */
+export enum BillingPlanKey {
+  Enterprise = 'ENTERPRISE',
+  Pro = 'PRO'
+}
 
 export type BillingSubscription = {
   __typename?: 'BillingSubscription';
@@ -141,21 +167,70 @@ export enum CaptchaDriverType {
 
 export type ClientConfig = {
   __typename?: 'ClientConfig';
+  analyticsEnabled: Scalars['Boolean'];
   api: ApiConfig;
   authProviders: AuthProviders;
   billing: Billing;
+  canManageFeatureFlags: Scalars['Boolean'];
   captcha: Captcha;
   chromeExtensionId?: Maybe<Scalars['String']>;
   debugMode: Scalars['Boolean'];
+  defaultSubdomain?: Maybe<Scalars['String']>;
+  frontDomain: Scalars['String'];
+  isEmailVerificationRequired: Scalars['Boolean'];
+  isMultiWorkspaceEnabled: Scalars['Boolean'];
   sentry: Sentry;
   signInPrefilled: Scalars['Boolean'];
-  signUpDisabled: Scalars['Boolean'];
   support: Support;
+};
+
+export type ComputeStepOutputSchemaInput = {
+  /** Step JSON format */
+  step: Scalars['JSON'];
+};
+
+export type CreateDraftFromWorkflowVersionInput = {
+  /** Workflow ID */
+  workflowId: Scalars['String'];
+  /** Workflow version ID */
+  workflowVersionIdToCopy: Scalars['String'];
+};
+
+export type CreateFieldInput = {
+  defaultValue?: InputMaybe<Scalars['JSON']>;
+  description?: InputMaybe<Scalars['String']>;
+  icon?: InputMaybe<Scalars['String']>;
+  isActive?: InputMaybe<Scalars['Boolean']>;
+  isCustom?: InputMaybe<Scalars['Boolean']>;
+  isLabelSyncedWithName?: InputMaybe<Scalars['Boolean']>;
+  isNullable?: InputMaybe<Scalars['Boolean']>;
+  isRemoteCreation?: InputMaybe<Scalars['Boolean']>;
+  isSystem?: InputMaybe<Scalars['Boolean']>;
+  isUnique?: InputMaybe<Scalars['Boolean']>;
+  label: Scalars['String'];
+  name: Scalars['String'];
+  objectMetadataId: Scalars['String'];
+  options?: InputMaybe<Scalars['JSON']>;
+  settings?: InputMaybe<Scalars['JSON']>;
+  type: FieldMetadataType;
+};
+
+export type CreateOneFieldMetadataInput = {
+  /** The record to create */
+  field: CreateFieldInput;
 };
 
 export type CreateServerlessFunctionInput = {
   description?: InputMaybe<Scalars['String']>;
   name: Scalars['String'];
+  timeoutSeconds?: InputMaybe<Scalars['Float']>;
+};
+
+export type CreateWorkflowVersionStepInput = {
+  /** New step type */
+  stepType: Scalars['String'];
+  /** Workflow version ID */
+  workflowVersionId: Scalars['String'];
 };
 
 export type CursorPaging = {
@@ -169,14 +244,30 @@ export type CursorPaging = {
   last?: InputMaybe<Scalars['Int']>;
 };
 
+export type DeleteOneFieldInput = {
+  /** The id of the field to delete. */
+  id: Scalars['UUID'];
+};
+
 export type DeleteOneObjectInput = {
   /** The id of the record to delete. */
   id: Scalars['UUID'];
 };
 
-export type DeleteServerlessFunctionInput = {
-  /** The id of the function. */
-  id: Scalars['ID'];
+export type DeleteSsoInput = {
+  identityProviderId: Scalars['String'];
+};
+
+export type DeleteSsoOutput = {
+  __typename?: 'DeleteSsoOutput';
+  identityProviderId: Scalars['String'];
+};
+
+export type DeleteWorkflowVersionStepInput = {
+  /** Step to delete ID */
+  stepId: Scalars['String'];
+  /** Workflow version ID */
+  workflowVersionId: Scalars['String'];
 };
 
 /** Schema update on a table */
@@ -187,17 +278,24 @@ export enum DistantTableUpdate {
   TableDeleted = 'TABLE_DELETED'
 }
 
+export type EditSsoInput = {
+  id: Scalars['String'];
+  status: SsoIdentityProviderStatus;
+};
+
+export type EditSsoOutput = {
+  __typename?: 'EditSsoOutput';
+  id: Scalars['String'];
+  issuer: Scalars['String'];
+  name: Scalars['String'];
+  status: SsoIdentityProviderStatus;
+  type: IdentityProviderType;
+};
+
 export type EmailPasswordResetLink = {
   __typename?: 'EmailPasswordResetLink';
   /** Boolean that confirms query was dispatched */
   success: Scalars['Boolean'];
-};
-
-export type ExchangeAuthCode = {
-  __typename?: 'ExchangeAuthCode';
-  accessToken: AuthToken;
-  loginToken: AuthToken;
-  refreshToken: AuthToken;
 };
 
 export type ExecuteServerlessFunctionInput = {
@@ -212,25 +310,28 @@ export type ExecuteServerlessFunctionInput = {
 export type FeatureFlag = {
   __typename?: 'FeatureFlag';
   id: Scalars['UUID'];
-  key: Scalars['String'];
+  key: FeatureFlagKey;
   value: Scalars['Boolean'];
   workspaceId: Scalars['String'];
 };
 
-export type FeatureFlagFilter = {
-  and?: InputMaybe<Array<FeatureFlagFilter>>;
-  id?: InputMaybe<UuidFilterComparison>;
-  or?: InputMaybe<Array<FeatureFlagFilter>>;
-};
-
-export type FeatureFlagSort = {
-  direction: SortDirection;
-  field: FeatureFlagSortFields;
-  nulls?: InputMaybe<SortNulls>;
-};
-
-export enum FeatureFlagSortFields {
-  Id = 'id'
+export enum FeatureFlagKey {
+  IsAdvancedFiltersEnabled = 'IsAdvancedFiltersEnabled',
+  IsAirtableIntegrationEnabled = 'IsAirtableIntegrationEnabled',
+  IsAnalyticsV2Enabled = 'IsAnalyticsV2Enabled',
+  IsCommandMenuV2Enabled = 'IsCommandMenuV2Enabled',
+  IsCopilotEnabled = 'IsCopilotEnabled',
+  IsEventObjectEnabled = 'IsEventObjectEnabled',
+  IsFreeAccessEnabled = 'IsFreeAccessEnabled',
+  IsFunctionSettingsEnabled = 'IsFunctionSettingsEnabled',
+  IsGmailSendEmailScopeEnabled = 'IsGmailSendEmailScopeEnabled',
+  IsJsonFilterEnabled = 'IsJsonFilterEnabled',
+  IsLocalizationEnabled = 'IsLocalizationEnabled',
+  IsMicrosoftSyncEnabled = 'IsMicrosoftSyncEnabled',
+  IsPostgreSqlIntegrationEnabled = 'IsPostgreSQLIntegrationEnabled',
+  IsStripeIntegrationEnabled = 'IsStripeIntegrationEnabled',
+  IsUniqueIndexesEnabled = 'IsUniqueIndexesEnabled',
+  IsWorkflowEnabled = 'IsWorkflowEnabled'
 }
 
 export type FieldConnection = {
@@ -276,10 +377,31 @@ export enum FileFolder {
   WorkspaceLogo = 'WorkspaceLogo'
 }
 
+export type FindAvailableSsoidpOutput = {
+  __typename?: 'FindAvailableSSOIDPOutput';
+  id: Scalars['String'];
+  issuer: Scalars['String'];
+  name: Scalars['String'];
+  status: SsoIdentityProviderStatus;
+  type: IdentityProviderType;
+  workspace: WorkspaceNameAndId;
+};
+
 export type FullName = {
   __typename?: 'FullName';
   firstName: Scalars['String'];
   lastName: Scalars['String'];
+};
+
+export type GetAuthorizationUrlInput = {
+  identityProviderId: Scalars['String'];
+};
+
+export type GetAuthorizationUrlOutput = {
+  __typename?: 'GetAuthorizationUrlOutput';
+  authorizationURL: Scalars['String'];
+  id: Scalars['String'];
+  type: Scalars['String'];
 };
 
 export type GetServerlessFunctionSourceCodeInput = {
@@ -287,6 +409,17 @@ export type GetServerlessFunctionSourceCodeInput = {
   id: Scalars['ID'];
   /** The version of the function */
   version?: Scalars['String'];
+};
+
+export enum IdentityProviderType {
+  Oidc = 'OIDC',
+  Saml = 'SAML'
+}
+
+export type ImpersonateOutput = {
+  __typename?: 'ImpersonateOutput';
+  loginToken: AuthToken;
+  workspace: WorkspaceSubdomainAndId;
 };
 
 export type IndexConnection = {
@@ -358,42 +491,58 @@ export type Mutation = {
   authorizeApp: AuthorizeApp;
   challenge: LoginToken;
   checkoutSession: SessionEntity;
+  computeStepOutputSchema: Scalars['JSON'];
+  createDraftFromWorkflowVersion: Scalars['Boolean'];
+  createOIDCIdentityProvider: SetupSsoOutput;
   createOneAppToken: AppToken;
+  createOneField: Field;
   createOneObject: Object;
   createOneServerlessFunction: ServerlessFunction;
+  createSAMLIdentityProvider: SetupSsoOutput;
+  createWorkflowVersionStep: WorkflowAction;
   deactivateWorkflowVersion: Scalars['Boolean'];
   deleteCurrentWorkspace: Workspace;
+  deleteOneField: Field;
   deleteOneObject: Object;
   deleteOneServerlessFunction: ServerlessFunction;
+  deleteSSOIdentityProvider: DeleteSsoOutput;
   deleteUser: User;
+  deleteWorkflowVersionStep: WorkflowAction;
   deleteWorkspaceInvitation: Scalars['String'];
   disablePostgresProxy: PostgresCredentials;
+  editSSOIdentityProvider: EditSsoOutput;
   emailPasswordResetLink: EmailPasswordResetLink;
   enablePostgresProxy: PostgresCredentials;
-  exchangeAuthorizationCode: ExchangeAuthCode;
   executeOneServerlessFunction: ServerlessFunctionExecutionResult;
   generateApiKeyToken: ApiKeyToken;
-  generateJWT: AuthTokens;
   generateTransientToken: TransientToken;
-  impersonate: Verify;
+  getAuthorizationUrl: GetAuthorizationUrlOutput;
+  getLoginTokenFromEmailVerificationToken: LoginToken;
+  impersonate: ImpersonateOutput;
   publishServerlessFunction: ServerlessFunction;
   renewToken: AuthTokens;
+  resendEmailVerificationToken: ResendEmailVerificationTokenOutput;
   resendWorkspaceInvitation: SendInvitationsOutput;
   runWorkflowVersion: WorkflowRun;
   sendInvitations: SendInvitationsOutput;
-  signUp: LoginToken;
+  signUp: SignUpOutput;
   skipSyncEmailOnboardingStep: OnboardingStepSuccess;
+  switchWorkspace: PublicWorkspaceDataOutput;
   track: Analytics;
   updateBillingSubscription: UpdateBillingEntity;
+  updateOneField: Field;
   updateOneObject: Object;
   updateOneServerlessFunction: ServerlessFunction;
   updatePasswordViaResetToken: InvalidatePassword;
+  updateWorkflowVersionStep: WorkflowAction;
   updateWorkspace: Workspace;
+  updateWorkspaceFeatureFlag: Scalars['Boolean'];
   uploadFile: Scalars['String'];
   uploadImage: Scalars['String'];
   uploadProfilePicture: Scalars['String'];
   uploadWorkspaceLogo: Scalars['String'];
-  verify: Verify;
+  userLookupAdminPanel: UserLookup;
+  verify: AuthTokens;
 };
 
 
@@ -432,8 +581,30 @@ export type MutationChallengeArgs = {
 
 
 export type MutationCheckoutSessionArgs = {
+  plan?: BillingPlanKey;
   recurringInterval: SubscriptionInterval;
+  requirePaymentMethod?: Scalars['Boolean'];
   successUrlPath?: InputMaybe<Scalars['String']>;
+};
+
+
+export type MutationComputeStepOutputSchemaArgs = {
+  input: ComputeStepOutputSchemaInput;
+};
+
+
+export type MutationCreateDraftFromWorkflowVersionArgs = {
+  input: CreateDraftFromWorkflowVersionInput;
+};
+
+
+export type MutationCreateOidcIdentityProviderArgs = {
+  input: SetupOidcSsoInput;
+};
+
+
+export type MutationCreateOneFieldArgs = {
+  input: CreateOneFieldMetadataInput;
 };
 
 
@@ -442,8 +613,23 @@ export type MutationCreateOneServerlessFunctionArgs = {
 };
 
 
+export type MutationCreateSamlIdentityProviderArgs = {
+  input: SetupSamlSsoInput;
+};
+
+
+export type MutationCreateWorkflowVersionStepArgs = {
+  input: CreateWorkflowVersionStepInput;
+};
+
+
 export type MutationDeactivateWorkflowVersionArgs = {
   workflowVersionId: Scalars['String'];
+};
+
+
+export type MutationDeleteOneFieldArgs = {
+  input: DeleteOneFieldInput;
 };
 
 
@@ -453,7 +639,17 @@ export type MutationDeleteOneObjectArgs = {
 
 
 export type MutationDeleteOneServerlessFunctionArgs = {
-  input: DeleteServerlessFunctionInput;
+  input: ServerlessFunctionIdInput;
+};
+
+
+export type MutationDeleteSsoIdentityProviderArgs = {
+  input: DeleteSsoInput;
+};
+
+
+export type MutationDeleteWorkflowVersionStepArgs = {
+  input: DeleteWorkflowVersionStepInput;
 };
 
 
@@ -462,15 +658,13 @@ export type MutationDeleteWorkspaceInvitationArgs = {
 };
 
 
-export type MutationEmailPasswordResetLinkArgs = {
-  email: Scalars['String'];
+export type MutationEditSsoIdentityProviderArgs = {
+  input: EditSsoInput;
 };
 
 
-export type MutationExchangeAuthorizationCodeArgs = {
-  authorizationCode: Scalars['String'];
-  clientSecret?: InputMaybe<Scalars['String']>;
-  codeVerifier?: InputMaybe<Scalars['String']>;
+export type MutationEmailPasswordResetLinkArgs = {
+  email: Scalars['String'];
 };
 
 
@@ -485,13 +679,20 @@ export type MutationGenerateApiKeyTokenArgs = {
 };
 
 
-export type MutationGenerateJwtArgs = {
-  workspaceId: Scalars['String'];
+export type MutationGetAuthorizationUrlArgs = {
+  input: GetAuthorizationUrlInput;
+};
+
+
+export type MutationGetLoginTokenFromEmailVerificationTokenArgs = {
+  captchaToken?: InputMaybe<Scalars['String']>;
+  emailVerificationToken: Scalars['String'];
 };
 
 
 export type MutationImpersonateArgs = {
   userId: Scalars['String'];
+  workspaceId: Scalars['String'];
 };
 
 
@@ -502,6 +703,11 @@ export type MutationPublishServerlessFunctionArgs = {
 
 export type MutationRenewTokenArgs = {
   appToken: Scalars['String'];
+};
+
+
+export type MutationResendEmailVerificationTokenArgs = {
+  email: Scalars['String'];
 };
 
 
@@ -524,14 +730,25 @@ export type MutationSignUpArgs = {
   captchaToken?: InputMaybe<Scalars['String']>;
   email: Scalars['String'];
   password: Scalars['String'];
+  workspaceId?: InputMaybe<Scalars['String']>;
   workspaceInviteHash?: InputMaybe<Scalars['String']>;
   workspacePersonalInviteToken?: InputMaybe<Scalars['String']>;
+};
+
+
+export type MutationSwitchWorkspaceArgs = {
+  workspaceId: Scalars['String'];
 };
 
 
 export type MutationTrackArgs = {
   action: Scalars['String'];
   payload: Scalars['JSON'];
+};
+
+
+export type MutationUpdateOneFieldArgs = {
+  input: UpdateOneFieldMetadataInput;
 };
 
 
@@ -551,8 +768,20 @@ export type MutationUpdatePasswordViaResetTokenArgs = {
 };
 
 
+export type MutationUpdateWorkflowVersionStepArgs = {
+  input: UpdateWorkflowVersionStepInput;
+};
+
+
 export type MutationUpdateWorkspaceArgs = {
   data: UpdateWorkspaceInput;
+};
+
+
+export type MutationUpdateWorkspaceFeatureFlagArgs = {
+  featureFlag: Scalars['String'];
+  value: Scalars['Boolean'];
+  workspaceId: Scalars['String'];
 };
 
 
@@ -575,6 +804,11 @@ export type MutationUploadProfilePictureArgs = {
 
 export type MutationUploadWorkspaceLogoArgs = {
   file: Scalars['Upload'];
+};
+
+
+export type MutationUserLookupAdminPanelArgs = {
+  userIdentifier: Scalars['String'];
 };
 
 
@@ -656,6 +890,15 @@ export type ProductPricesEntity = {
   totalNumberOfPrices: Scalars['Int'];
 };
 
+export type PublicWorkspaceDataOutput = {
+  __typename?: 'PublicWorkspaceDataOutput';
+  authProviders: AuthProviders;
+  displayName?: Maybe<Scalars['String']>;
+  id: Scalars['String'];
+  logo?: Maybe<Scalars['String']>;
+  subdomain: Scalars['String'];
+};
+
 export type PublishServerlessFunctionInput = {
   /** The id of the function. */
   id: Scalars['ID'];
@@ -664,16 +907,22 @@ export type PublishServerlessFunctionInput = {
 export type Query = {
   __typename?: 'Query';
   billingPortalSession: SessionEntity;
-  checkUserExists: UserExists;
+  checkUserExists: UserExistsOutput;
   checkWorkspaceInviteHashIsValid: WorkspaceInviteHashValid;
   clientConfig: ClientConfig;
   currentUser: User;
   currentWorkspace: Workspace;
+  field: Field;
+  fields: FieldConnection;
+  findAvailableWorkspacesByEmail: Array<AvailableWorkspaceOutput>;
+  findManyServerlessFunctions: Array<ServerlessFunction>;
+  findOneServerlessFunction: ServerlessFunction;
   findWorkspaceFromInviteHash: Workspace;
   findWorkspaceInvitations: Array<WorkspaceInvitation>;
   getAvailablePackages: Scalars['JSON'];
   getPostgresCredentials?: Maybe<PostgresCredentials>;
   getProductPrices: ProductPricesEntity;
+  getPublicWorkspaceDataBySubdomain: PublicWorkspaceDataOutput;
   getServerlessFunctionSourceCode?: Maybe<Scalars['JSON']>;
   getTimelineCalendarEventsFromCompanyId: TimelineCalendarEventsWithTotal;
   getTimelineCalendarEventsFromPersonId: TimelineCalendarEventsWithTotal;
@@ -681,10 +930,9 @@ export type Query = {
   getTimelineThreadsFromPersonId: TimelineThreadsWithTotal;
   index: Index;
   indexMetadatas: IndexConnection;
+  listSSOIdentityProvidersByWorkspaceId: Array<FindAvailableSsoidpOutput>;
   object: Object;
   objects: ObjectConnection;
-  serverlessFunction: ServerlessFunction;
-  serverlessFunctions: ServerlessFunctionConnection;
   validatePasswordResetToken: ValidatePasswordResetToken;
 };
 
@@ -705,8 +953,23 @@ export type QueryCheckWorkspaceInviteHashIsValidArgs = {
 };
 
 
+export type QueryFindAvailableWorkspacesByEmailArgs = {
+  email: Scalars['String'];
+};
+
+
+export type QueryFindOneServerlessFunctionArgs = {
+  input: ServerlessFunctionIdInput;
+};
+
+
 export type QueryFindWorkspaceFromInviteHashArgs = {
   inviteHash: Scalars['String'];
+};
+
+
+export type QueryGetAvailablePackagesArgs = {
+  input: ServerlessFunctionIdInput;
 };
 
 
@@ -814,12 +1077,41 @@ export enum RemoteTableStatus {
   Synced = 'SYNCED'
 }
 
+export type ResendEmailVerificationTokenOutput = {
+  __typename?: 'ResendEmailVerificationTokenOutput';
+  success: Scalars['Boolean'];
+};
+
 export type RunWorkflowVersionInput = {
   /** Execution result in JSON format */
   payload?: InputMaybe<Scalars['JSON']>;
   /** Workflow version ID */
   workflowVersionId: Scalars['String'];
 };
+
+export type SsoConnection = {
+  __typename?: 'SSOConnection';
+  id: Scalars['String'];
+  issuer: Scalars['String'];
+  name: Scalars['String'];
+  status: SsoIdentityProviderStatus;
+  type: IdentityProviderType;
+};
+
+export type SsoIdentityProvider = {
+  __typename?: 'SSOIdentityProvider';
+  id: Scalars['String'];
+  issuer: Scalars['String'];
+  name: Scalars['String'];
+  status: SsoIdentityProviderStatus;
+  type: IdentityProviderType;
+};
+
+export enum SsoIdentityProviderStatus {
+  Active = 'Active',
+  Error = 'Error',
+  Inactive = 'Inactive'
+}
 
 export type SendInvitationsOutput = {
   __typename?: 'SendInvitationsOutput';
@@ -842,26 +1134,13 @@ export type ServerlessFunction = {
   description?: Maybe<Scalars['String']>;
   id: Scalars['UUID'];
   latestVersion?: Maybe<Scalars['String']>;
+  latestVersionInputSchema?: Maybe<Scalars['JSON']>;
   name: Scalars['String'];
+  publishedVersions: Array<Scalars['String']>;
   runtime: Scalars['String'];
   syncStatus: ServerlessFunctionSyncStatus;
+  timeoutSeconds: Scalars['Float'];
   updatedAt: Scalars['DateTime'];
-};
-
-export type ServerlessFunctionConnection = {
-  __typename?: 'ServerlessFunctionConnection';
-  /** Array of edges. */
-  edges: Array<ServerlessFunctionEdge>;
-  /** Paging information */
-  pageInfo: PageInfo;
-};
-
-export type ServerlessFunctionEdge = {
-  __typename?: 'ServerlessFunctionEdge';
-  /** Cursor for this node. */
-  cursor: Scalars['ConnectionCursor'];
-  /** The node containing the ServerlessFunction */
-  node: ServerlessFunction;
 };
 
 export type ServerlessFunctionExecutionResult = {
@@ -882,6 +1161,11 @@ export enum ServerlessFunctionExecutionStatus {
   Success = 'SUCCESS'
 }
 
+export type ServerlessFunctionIdInput = {
+  /** The id of the function. */
+  id: Scalars['ID'];
+};
+
 /** SyncStatus of the serverlessFunction */
 export enum ServerlessFunctionSyncStatus {
   NotReady = 'NOT_READY',
@@ -891,6 +1175,37 @@ export enum ServerlessFunctionSyncStatus {
 export type SessionEntity = {
   __typename?: 'SessionEntity';
   url?: Maybe<Scalars['String']>;
+};
+
+export type SetupOidcSsoInput = {
+  clientID: Scalars['String'];
+  clientSecret: Scalars['String'];
+  issuer: Scalars['String'];
+  name: Scalars['String'];
+};
+
+export type SetupSamlSsoInput = {
+  certificate: Scalars['String'];
+  fingerprint?: InputMaybe<Scalars['String']>;
+  id: Scalars['String'];
+  issuer: Scalars['String'];
+  name: Scalars['String'];
+  ssoURL: Scalars['String'];
+};
+
+export type SetupSsoOutput = {
+  __typename?: 'SetupSsoOutput';
+  id: Scalars['String'];
+  issuer: Scalars['String'];
+  name: Scalars['String'];
+  status: SsoIdentityProviderStatus;
+  type: IdentityProviderType;
+};
+
+export type SignUpOutput = {
+  __typename?: 'SignUpOutput';
+  loginToken: AuthToken;
+  workspace: WorkspaceSubdomainAndId;
 };
 
 /** Sort Directions */
@@ -998,6 +1313,12 @@ export type TransientToken = {
   transientToken: AuthToken;
 };
 
+export type TrialPeriodDto = {
+  __typename?: 'TrialPeriodDTO';
+  duration: Scalars['Float'];
+  isCreditCardRequired: Scalars['Boolean'];
+};
+
 export type UuidFilterComparison = {
   eq?: InputMaybe<Scalars['UUID']>;
   gt?: InputMaybe<Scalars['UUID']>;
@@ -1021,16 +1342,41 @@ export type UpdateBillingEntity = {
   success: Scalars['Boolean'];
 };
 
+export type UpdateFieldInput = {
+  defaultValue?: InputMaybe<Scalars['JSON']>;
+  description?: InputMaybe<Scalars['String']>;
+  icon?: InputMaybe<Scalars['String']>;
+  isActive?: InputMaybe<Scalars['Boolean']>;
+  isCustom?: InputMaybe<Scalars['Boolean']>;
+  isLabelSyncedWithName?: InputMaybe<Scalars['Boolean']>;
+  isNullable?: InputMaybe<Scalars['Boolean']>;
+  isSystem?: InputMaybe<Scalars['Boolean']>;
+  isUnique?: InputMaybe<Scalars['Boolean']>;
+  label?: InputMaybe<Scalars['String']>;
+  name?: InputMaybe<Scalars['String']>;
+  options?: InputMaybe<Scalars['JSON']>;
+  settings?: InputMaybe<Scalars['JSON']>;
+};
+
 export type UpdateObjectPayload = {
   description?: InputMaybe<Scalars['String']>;
   icon?: InputMaybe<Scalars['String']>;
   imageIdentifierFieldMetadataId?: InputMaybe<Scalars['String']>;
   isActive?: InputMaybe<Scalars['Boolean']>;
+  isLabelSyncedWithName?: InputMaybe<Scalars['Boolean']>;
   labelIdentifierFieldMetadataId?: InputMaybe<Scalars['String']>;
   labelPlural?: InputMaybe<Scalars['String']>;
   labelSingular?: InputMaybe<Scalars['String']>;
   namePlural?: InputMaybe<Scalars['String']>;
   nameSingular?: InputMaybe<Scalars['String']>;
+  shortcut?: InputMaybe<Scalars['String']>;
+};
+
+export type UpdateOneFieldMetadataInput = {
+  /** The id of the record to update */
+  id: Scalars['UUID'];
+  /** The record to update */
+  update: UpdateFieldInput;
 };
 
 export type UpdateOneObjectInput = {
@@ -1045,6 +1391,14 @@ export type UpdateServerlessFunctionInput = {
   /** Id of the serverless function to execute */
   id: Scalars['UUID'];
   name: Scalars['String'];
+  timeoutSeconds?: InputMaybe<Scalars['Float']>;
+};
+
+export type UpdateWorkflowVersionStepInput = {
+  /** Step to update in JSON format */
+  step: Scalars['JSON'];
+  /** Workflow version ID */
+  workflowVersionId: Scalars['String'];
 };
 
 export type UpdateWorkspaceInput = {
@@ -1052,22 +1406,27 @@ export type UpdateWorkspaceInput = {
   displayName?: InputMaybe<Scalars['String']>;
   domainName?: InputMaybe<Scalars['String']>;
   inviteHash?: InputMaybe<Scalars['String']>;
+  isGoogleAuthEnabled?: InputMaybe<Scalars['Boolean']>;
+  isMicrosoftAuthEnabled?: InputMaybe<Scalars['Boolean']>;
+  isPasswordAuthEnabled?: InputMaybe<Scalars['Boolean']>;
+  isPublicInviteLinkEnabled?: InputMaybe<Scalars['Boolean']>;
   logo?: InputMaybe<Scalars['String']>;
+  subdomain?: InputMaybe<Scalars['String']>;
 };
 
 export type User = {
   __typename?: 'User';
+  analyticsTinybirdJwts?: Maybe<AnalyticsTinybirdJwtMap>;
   canImpersonate: Scalars['Boolean'];
   createdAt: Scalars['DateTime'];
+  currentWorkspace?: Maybe<Workspace>;
   defaultAvatarUrl?: Maybe<Scalars['String']>;
-  defaultWorkspace: Workspace;
-  defaultWorkspaceId: Scalars['String'];
   deletedAt?: Maybe<Scalars['DateTime']>;
   disabled?: Maybe<Scalars['Boolean']>;
   email: Scalars['String'];
-  emailVerified: Scalars['Boolean'];
   firstName: Scalars['String'];
   id: Scalars['UUID'];
+  isEmailVerified: Scalars['Boolean'];
   lastName: Scalars['String'];
   onboardingStatus?: Maybe<OnboardingStatus>;
   passwordHash?: Maybe<Scalars['String']>;
@@ -1089,12 +1448,35 @@ export type UserEdge = {
 
 export type UserExists = {
   __typename?: 'UserExists';
+  availableWorkspaces: Array<AvailableWorkspaceOutput>;
   exists: Scalars['Boolean'];
+  isEmailVerified: Scalars['Boolean'];
+};
+
+export type UserExistsOutput = UserExists | UserNotExists;
+
+export type UserInfo = {
+  __typename?: 'UserInfo';
+  email: Scalars['String'];
+  firstName?: Maybe<Scalars['String']>;
+  id: Scalars['String'];
+  lastName?: Maybe<Scalars['String']>;
+};
+
+export type UserLookup = {
+  __typename?: 'UserLookup';
+  user: UserInfo;
+  workspaces: Array<WorkspaceInfo>;
 };
 
 export type UserMappingOptionsUser = {
   __typename?: 'UserMappingOptionsUser';
   user?: Maybe<Scalars['String']>;
+};
+
+export type UserNotExists = {
+  __typename?: 'UserNotExists';
+  exists: Scalars['Boolean'];
 };
 
 export type UserWorkspace = {
@@ -1115,10 +1497,13 @@ export type ValidatePasswordResetToken = {
   id: Scalars['String'];
 };
 
-export type Verify = {
-  __typename?: 'Verify';
-  tokens: AuthTokenPair;
-  user: User;
+export type WorkflowAction = {
+  __typename?: 'WorkflowAction';
+  id: Scalars['UUID'];
+  name: Scalars['String'];
+  settings: Scalars['JSON'];
+  type: Scalars['String'];
+  valid: Scalars['Boolean'];
 };
 
 export type WorkflowRun = {
@@ -1130,6 +1515,8 @@ export type Workspace = {
   __typename?: 'Workspace';
   activationStatus: WorkspaceActivationStatus;
   allowImpersonation: Scalars['Boolean'];
+  billingCustomers?: Maybe<Array<BillingCustomer>>;
+  billingEntitlements?: Maybe<Array<BillingEntitlement>>;
   billingSubscriptions?: Maybe<Array<BillingSubscription>>;
   createdAt: Scalars['DateTime'];
   currentBillingSubscription?: Maybe<BillingSubscription>;
@@ -1139,12 +1526,30 @@ export type Workspace = {
   displayName?: Maybe<Scalars['String']>;
   domainName?: Maybe<Scalars['String']>;
   featureFlags?: Maybe<Array<FeatureFlag>>;
+  hasValidEntrepriseKey: Scalars['Boolean'];
   id: Scalars['UUID'];
   inviteHash?: Maybe<Scalars['String']>;
+  isGoogleAuthEnabled: Scalars['Boolean'];
+  isMicrosoftAuthEnabled: Scalars['Boolean'];
+  isPasswordAuthEnabled: Scalars['Boolean'];
+  isPublicInviteLinkEnabled: Scalars['Boolean'];
   logo?: Maybe<Scalars['String']>;
   metadataVersion: Scalars['Float'];
+  subdomain: Scalars['String'];
   updatedAt: Scalars['DateTime'];
   workspaceMembersCount?: Maybe<Scalars['Float']>;
+};
+
+
+export type WorkspaceBillingCustomersArgs = {
+  filter?: BillingCustomerFilter;
+  sorting?: Array<BillingCustomerSort>;
+};
+
+
+export type WorkspaceBillingEntitlementsArgs = {
+  filter?: BillingEntitlementFilter;
+  sorting?: Array<BillingEntitlementSort>;
 };
 
 
@@ -1153,17 +1558,12 @@ export type WorkspaceBillingSubscriptionsArgs = {
   sorting?: Array<BillingSubscriptionSort>;
 };
 
-
-export type WorkspaceFeatureFlagsArgs = {
-  filter?: FeatureFlagFilter;
-  sorting?: Array<FeatureFlagSort>;
-};
-
 export enum WorkspaceActivationStatus {
-  Active = 'ACTIVE',
-  Inactive = 'INACTIVE',
-  OngoingCreation = 'ONGOING_CREATION',
-  PendingCreation = 'PENDING_CREATION'
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  ONGOING_CREATION = 'ONGOING_CREATION',
+  PENDING_CREATION = 'PENDING_CREATION',
+  SUSPENDED = 'SUSPENDED'
 }
 
 export type WorkspaceEdge = {
@@ -1172,6 +1572,17 @@ export type WorkspaceEdge = {
   cursor: Scalars['ConnectionCursor'];
   /** The node containing the Workspace */
   node: Workspace;
+};
+
+export type WorkspaceInfo = {
+  __typename?: 'WorkspaceInfo';
+  allowImpersonation: Scalars['Boolean'];
+  featureFlags: Array<FeatureFlag>;
+  id: Scalars['String'];
+  logo?: Maybe<Scalars['String']>;
+  name: Scalars['String'];
+  totalUsers: Scalars['Float'];
+  users: Array<UserInfo>;
 };
 
 export type WorkspaceInvitation = {
@@ -1213,6 +1624,63 @@ export enum WorkspaceMemberTimeFormatEnum {
   System = 'SYSTEM'
 }
 
+export type WorkspaceNameAndId = {
+  __typename?: 'WorkspaceNameAndId';
+  displayName?: Maybe<Scalars['String']>;
+  id: Scalars['String'];
+};
+
+export type WorkspaceSubdomainAndId = {
+  __typename?: 'WorkspaceSubdomainAndId';
+  id: Scalars['String'];
+  subdomain: Scalars['String'];
+};
+
+export type BillingCustomer = {
+  __typename?: 'billingCustomer';
+  id: Scalars['UUID'];
+};
+
+export type BillingCustomerFilter = {
+  and?: InputMaybe<Array<BillingCustomerFilter>>;
+  id?: InputMaybe<UuidFilterComparison>;
+  or?: InputMaybe<Array<BillingCustomerFilter>>;
+};
+
+export type BillingCustomerSort = {
+  direction: SortDirection;
+  field: BillingCustomerSortFields;
+  nulls?: InputMaybe<SortNulls>;
+};
+
+export enum BillingCustomerSortFields {
+  Id = 'id'
+}
+
+export type BillingEntitlement = {
+  __typename?: 'billingEntitlement';
+  id: Scalars['UUID'];
+  key: Scalars['String'];
+  value: Scalars['Boolean'];
+  workspaceId: Scalars['String'];
+};
+
+export type BillingEntitlementFilter = {
+  and?: InputMaybe<Array<BillingEntitlementFilter>>;
+  id?: InputMaybe<UuidFilterComparison>;
+  or?: InputMaybe<Array<BillingEntitlementFilter>>;
+};
+
+export type BillingEntitlementSort = {
+  direction: SortDirection;
+  field: BillingEntitlementSortFields;
+  nulls?: InputMaybe<SortNulls>;
+};
+
+export enum BillingEntitlementSortFields {
+  Id = 'id'
+}
+
 export type Field = {
   __typename?: 'field';
   createdAt: Scalars['DateTime'];
@@ -1223,6 +1691,7 @@ export type Field = {
   id: Scalars['UUID'];
   isActive?: Maybe<Scalars['Boolean']>;
   isCustom?: Maybe<Scalars['Boolean']>;
+  isLabelSyncedWithName?: Maybe<Scalars['Boolean']>;
   isNullable?: Maybe<Scalars['Boolean']>;
   isSystem?: Maybe<Scalars['Boolean']>;
   isUnique?: Maybe<Scalars['Boolean']>;
@@ -1331,6 +1800,7 @@ export type Object = {
   indexMetadatas: ObjectIndexMetadatasConnection;
   isActive: Scalars['Boolean'];
   isCustom: Scalars['Boolean'];
+  isLabelSyncedWithName: Scalars['Boolean'];
   isRemote: Scalars['Boolean'];
   isSystem: Scalars['Boolean'];
   labelIdentifierFieldMetadataId?: Maybe<Scalars['String']>;
@@ -1338,6 +1808,7 @@ export type Object = {
   labelSingular: Scalars['String'];
   namePlural: Scalars['String'];
   nameSingular: Scalars['String'];
+  shortcut?: Maybe<Scalars['String']>;
   updatedAt: Scalars['DateTime'];
 };
 
@@ -1469,6 +1940,8 @@ export type AuthTokenFragmentFragment = { __typename?: 'AuthToken', token: strin
 
 export type AuthTokensFragmentFragment = { __typename?: 'AuthTokenPair', accessToken: { __typename?: 'AuthToken', token: string, expiresAt: string }, refreshToken: { __typename?: 'AuthToken', token: string, expiresAt: string } };
 
+export type AvailableSsoIdentityProvidersFragmentFragment = { __typename?: 'FindAvailableSSOIDPOutput', id: string, issuer: string, name: string, status: SsoIdentityProviderStatus, workspace: { __typename?: 'WorkspaceNameAndId', id: string, displayName?: string | null } };
+
 export type AuthorizeAppMutationVariables = Exact<{
   clientId: Scalars['String'];
   codeChallenge: Scalars['String'];
@@ -1502,24 +1975,33 @@ export type GenerateApiKeyTokenMutationVariables = Exact<{
 
 export type GenerateApiKeyTokenMutation = { __typename?: 'Mutation', generateApiKeyToken: { __typename?: 'ApiKeyToken', token: string } };
 
-export type GenerateJwtMutationVariables = Exact<{
-  workspaceId: Scalars['String'];
-}>;
-
-
-export type GenerateJwtMutation = { __typename?: 'Mutation', generateJWT: { __typename?: 'AuthTokens', tokens: { __typename?: 'AuthTokenPair', accessToken: { __typename?: 'AuthToken', token: string, expiresAt: string }, refreshToken: { __typename?: 'AuthToken', token: string, expiresAt: string } } } };
-
 export type GenerateTransientTokenMutationVariables = Exact<{ [key: string]: never; }>;
 
 
 export type GenerateTransientTokenMutation = { __typename?: 'Mutation', generateTransientToken: { __typename?: 'TransientToken', transientToken: { __typename?: 'AuthToken', token: string } } };
 
-export type ImpersonateMutationVariables = Exact<{
-  userId: Scalars['String'];
+export type GetAuthorizationUrlMutationVariables = Exact<{
+  input: GetAuthorizationUrlInput;
 }>;
 
 
-export type ImpersonateMutation = { __typename?: 'Mutation', impersonate: { __typename?: 'Verify', user: { __typename?: 'User', id: any, firstName: string, lastName: string, email: string, canImpersonate: boolean, supportUserHash?: string | null, onboardingStatus?: OnboardingStatus | null, userVars: any, workspaceMember?: { __typename?: 'WorkspaceMember', id: any, colorScheme: string, avatarUrl?: string | null, locale?: string | null, timeZone?: string | null, dateFormat?: WorkspaceMemberDateFormatEnum | null, timeFormat?: WorkspaceMemberTimeFormatEnum | null, name: { __typename?: 'FullName', firstName: string, lastName: string } } | null, workspaceMembers?: Array<{ __typename?: 'WorkspaceMember', id: any, colorScheme: string, avatarUrl?: string | null, locale?: string | null, timeZone?: string | null, dateFormat?: WorkspaceMemberDateFormatEnum | null, timeFormat?: WorkspaceMemberTimeFormatEnum | null, name: { __typename?: 'FullName', firstName: string, lastName: string } }> | null, defaultWorkspace: { __typename?: 'Workspace', id: any, displayName?: string | null, logo?: string | null, domainName?: string | null, inviteHash?: string | null, allowImpersonation: boolean, activationStatus: WorkspaceActivationStatus, metadataVersion: number, workspaceMembersCount?: number | null, featureFlags?: Array<{ __typename?: 'FeatureFlag', id: any, key: string, value: boolean, workspaceId: string }> | null, currentBillingSubscription?: { __typename?: 'BillingSubscription', id: any, status: SubscriptionStatus, interval?: SubscriptionInterval | null } | null }, workspaces: Array<{ __typename?: 'UserWorkspace', workspace?: { __typename?: 'Workspace', id: any, logo?: string | null, displayName?: string | null, domainName?: string | null } | null }> }, tokens: { __typename?: 'AuthTokenPair', accessToken: { __typename?: 'AuthToken', token: string, expiresAt: string }, refreshToken: { __typename?: 'AuthToken', token: string, expiresAt: string } } } };
+export type GetAuthorizationUrlMutation = { __typename?: 'Mutation', getAuthorizationUrl: { __typename?: 'GetAuthorizationUrlOutput', id: string, type: string, authorizationURL: string } };
+
+export type GetLoginTokenFromEmailVerificationTokenMutationVariables = Exact<{
+  emailVerificationToken: Scalars['String'];
+  captchaToken?: InputMaybe<Scalars['String']>;
+}>;
+
+
+export type GetLoginTokenFromEmailVerificationTokenMutation = { __typename?: 'Mutation', getLoginTokenFromEmailVerificationToken: { __typename?: 'LoginToken', loginToken: { __typename?: 'AuthToken', token: string, expiresAt: string } } };
+
+export type ImpersonateMutationVariables = Exact<{
+  userId: Scalars['String'];
+  workspaceId: Scalars['String'];
+}>;
+
+
+export type ImpersonateMutation = { __typename?: 'Mutation', impersonate: { __typename?: 'ImpersonateOutput', workspace: { __typename?: 'WorkspaceSubdomainAndId', subdomain: string, id: string }, loginToken: { __typename?: 'AuthToken', token: string, expiresAt: string } } };
 
 export type RenewTokenMutationVariables = Exact<{
   appToken: Scalars['String'];
@@ -1528,16 +2010,31 @@ export type RenewTokenMutationVariables = Exact<{
 
 export type RenewTokenMutation = { __typename?: 'Mutation', renewToken: { __typename?: 'AuthTokens', tokens: { __typename?: 'AuthTokenPair', accessToken: { __typename?: 'AuthToken', token: string, expiresAt: string }, refreshToken: { __typename?: 'AuthToken', token: string, expiresAt: string } } } };
 
+export type ResendEmailVerificationTokenMutationVariables = Exact<{
+  email: Scalars['String'];
+}>;
+
+
+export type ResendEmailVerificationTokenMutation = { __typename?: 'Mutation', resendEmailVerificationToken: { __typename?: 'ResendEmailVerificationTokenOutput', success: boolean } };
+
 export type SignUpMutationVariables = Exact<{
   email: Scalars['String'];
   password: Scalars['String'];
   workspaceInviteHash?: InputMaybe<Scalars['String']>;
   workspacePersonalInviteToken?: InputMaybe<Scalars['String']>;
   captchaToken?: InputMaybe<Scalars['String']>;
+  workspaceId?: InputMaybe<Scalars['String']>;
 }>;
 
 
-export type SignUpMutation = { __typename?: 'Mutation', signUp: { __typename?: 'LoginToken', loginToken: { __typename?: 'AuthToken', token: string, expiresAt: string } } };
+export type SignUpMutation = { __typename?: 'Mutation', signUp: { __typename?: 'SignUpOutput', loginToken: { __typename?: 'AuthToken', token: string, expiresAt: string }, workspace: { __typename?: 'WorkspaceSubdomainAndId', id: string, subdomain: string } } };
+
+export type SwitchWorkspaceMutationVariables = Exact<{
+  workspaceId: Scalars['String'];
+}>;
+
+
+export type SwitchWorkspaceMutation = { __typename?: 'Mutation', switchWorkspace: { __typename?: 'PublicWorkspaceDataOutput', id: string, subdomain: string, authProviders: { __typename?: 'AuthProviders', google: boolean, magicLink: boolean, password: boolean, microsoft: boolean, sso: Array<{ __typename?: 'SSOIdentityProvider', id: string, name: string, type: IdentityProviderType, status: SsoIdentityProviderStatus, issuer: string }> } } };
 
 export type UpdatePasswordViaResetTokenMutationVariables = Exact<{
   token: Scalars['String'];
@@ -1552,7 +2049,7 @@ export type VerifyMutationVariables = Exact<{
 }>;
 
 
-export type VerifyMutation = { __typename?: 'Mutation', verify: { __typename?: 'Verify', user: { __typename?: 'User', id: any, firstName: string, lastName: string, email: string, canImpersonate: boolean, supportUserHash?: string | null, onboardingStatus?: OnboardingStatus | null, userVars: any, workspaceMember?: { __typename?: 'WorkspaceMember', id: any, colorScheme: string, avatarUrl?: string | null, locale?: string | null, timeZone?: string | null, dateFormat?: WorkspaceMemberDateFormatEnum | null, timeFormat?: WorkspaceMemberTimeFormatEnum | null, name: { __typename?: 'FullName', firstName: string, lastName: string } } | null, workspaceMembers?: Array<{ __typename?: 'WorkspaceMember', id: any, colorScheme: string, avatarUrl?: string | null, locale?: string | null, timeZone?: string | null, dateFormat?: WorkspaceMemberDateFormatEnum | null, timeFormat?: WorkspaceMemberTimeFormatEnum | null, name: { __typename?: 'FullName', firstName: string, lastName: string } }> | null, defaultWorkspace: { __typename?: 'Workspace', id: any, displayName?: string | null, logo?: string | null, domainName?: string | null, inviteHash?: string | null, allowImpersonation: boolean, activationStatus: WorkspaceActivationStatus, metadataVersion: number, workspaceMembersCount?: number | null, featureFlags?: Array<{ __typename?: 'FeatureFlag', id: any, key: string, value: boolean, workspaceId: string }> | null, currentBillingSubscription?: { __typename?: 'BillingSubscription', id: any, status: SubscriptionStatus, interval?: SubscriptionInterval | null } | null }, workspaces: Array<{ __typename?: 'UserWorkspace', workspace?: { __typename?: 'Workspace', id: any, logo?: string | null, displayName?: string | null, domainName?: string | null } | null }> }, tokens: { __typename?: 'AuthTokenPair', accessToken: { __typename?: 'AuthToken', token: string, expiresAt: string }, refreshToken: { __typename?: 'AuthToken', token: string, expiresAt: string } } } };
+export type VerifyMutation = { __typename?: 'Mutation', verify: { __typename?: 'AuthTokens', tokens: { __typename?: 'AuthTokenPair', accessToken: { __typename?: 'AuthToken', token: string, expiresAt: string }, refreshToken: { __typename?: 'AuthToken', token: string, expiresAt: string } } } };
 
 export type CheckUserExistsQueryVariables = Exact<{
   email: Scalars['String'];
@@ -1560,7 +2057,12 @@ export type CheckUserExistsQueryVariables = Exact<{
 }>;
 
 
-export type CheckUserExistsQuery = { __typename?: 'Query', checkUserExists: { __typename?: 'UserExists', exists: boolean } };
+export type CheckUserExistsQuery = { __typename?: 'Query', checkUserExists: { __typename: 'UserExists', exists: boolean, isEmailVerified: boolean, availableWorkspaces: Array<{ __typename?: 'AvailableWorkspaceOutput', id: string, displayName?: string | null, subdomain: string, logo?: string | null, sso: Array<{ __typename?: 'SSOConnection', type: IdentityProviderType, id: string, issuer: string, name: string, status: SsoIdentityProviderStatus }> }> } | { __typename: 'UserNotExists', exists: boolean } };
+
+export type GetPublicWorkspaceDataBySubdomainQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetPublicWorkspaceDataBySubdomainQuery = { __typename?: 'Query', getPublicWorkspaceDataBySubdomain: { __typename?: 'PublicWorkspaceDataOutput', id: string, logo?: string | null, displayName?: string | null, subdomain: string, authProviders: { __typename?: 'AuthProviders', google: boolean, magicLink: boolean, password: boolean, microsoft: boolean, sso: Array<{ __typename?: 'SSOIdentityProvider', id: string, name: string, type: IdentityProviderType, status: SsoIdentityProviderStatus, issuer: string }> } } };
 
 export type ValidatePasswordResetTokenQueryVariables = Exact<{
   token: Scalars['String'];
@@ -1579,6 +2081,8 @@ export type BillingPortalSessionQuery = { __typename?: 'Query', billingPortalSes
 export type CheckoutSessionMutationVariables = Exact<{
   recurringInterval: SubscriptionInterval;
   successUrlPath?: InputMaybe<Scalars['String']>;
+  plan: BillingPlanKey;
+  requirePaymentMethod: Scalars['Boolean'];
 }>;
 
 
@@ -1599,14 +2103,63 @@ export type UpdateBillingSubscriptionMutation = { __typename?: 'Mutation', updat
 export type GetClientConfigQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetClientConfigQuery = { __typename?: 'Query', clientConfig: { __typename?: 'ClientConfig', signInPrefilled: boolean, signUpDisabled: boolean, debugMode: boolean, chromeExtensionId?: string | null, authProviders: { __typename?: 'AuthProviders', google: boolean, password: boolean, microsoft: boolean }, billing: { __typename?: 'Billing', isBillingEnabled: boolean, billingUrl?: string | null, billingFreeTrialDurationInDays?: number | null }, support: { __typename?: 'Support', supportDriver: string, supportFrontChatId?: string | null }, sentry: { __typename?: 'Sentry', dsn?: string | null, environment?: string | null, release?: string | null }, captcha: { __typename?: 'Captcha', provider?: CaptchaDriverType | null, siteKey?: string | null }, api: { __typename?: 'ApiConfig', mutationMaximumAffectedRecords: number } } };
+export type GetClientConfigQuery = { __typename?: 'Query', clientConfig: { __typename?: 'ClientConfig', signInPrefilled: boolean, isMultiWorkspaceEnabled: boolean, isEmailVerificationRequired: boolean, defaultSubdomain?: string | null, frontDomain: string, debugMode: boolean, analyticsEnabled: boolean, chromeExtensionId?: string | null, canManageFeatureFlags: boolean, billing: { __typename?: 'Billing', isBillingEnabled: boolean, billingUrl?: string | null, trialPeriods: Array<{ __typename?: 'TrialPeriodDTO', duration: number, isCreditCardRequired: boolean }> }, authProviders: { __typename?: 'AuthProviders', google: boolean, password: boolean, microsoft: boolean, sso: Array<{ __typename?: 'SSOIdentityProvider', id: string, name: string, type: IdentityProviderType, status: SsoIdentityProviderStatus, issuer: string }> }, support: { __typename?: 'Support', supportDriver: string, supportFrontChatId?: string | null }, sentry: { __typename?: 'Sentry', dsn?: string | null, environment?: string | null, release?: string | null }, captcha: { __typename?: 'Captcha', provider?: CaptchaDriverType | null, siteKey?: string | null }, api: { __typename?: 'ApiConfig', mutationMaximumAffectedRecords: number } } };
 
 export type SkipSyncEmailOnboardingStepMutationVariables = Exact<{ [key: string]: never; }>;
 
 
 export type SkipSyncEmailOnboardingStepMutation = { __typename?: 'Mutation', skipSyncEmailOnboardingStep: { __typename?: 'OnboardingStepSuccess', success: boolean } };
 
-export type UserQueryFragmentFragment = { __typename?: 'User', id: any, firstName: string, lastName: string, email: string, canImpersonate: boolean, supportUserHash?: string | null, onboardingStatus?: OnboardingStatus | null, userVars: any, workspaceMember?: { __typename?: 'WorkspaceMember', id: any, colorScheme: string, avatarUrl?: string | null, locale?: string | null, timeZone?: string | null, dateFormat?: WorkspaceMemberDateFormatEnum | null, timeFormat?: WorkspaceMemberTimeFormatEnum | null, name: { __typename?: 'FullName', firstName: string, lastName: string } } | null, workspaceMembers?: Array<{ __typename?: 'WorkspaceMember', id: any, colorScheme: string, avatarUrl?: string | null, locale?: string | null, timeZone?: string | null, dateFormat?: WorkspaceMemberDateFormatEnum | null, timeFormat?: WorkspaceMemberTimeFormatEnum | null, name: { __typename?: 'FullName', firstName: string, lastName: string } }> | null, defaultWorkspace: { __typename?: 'Workspace', id: any, displayName?: string | null, logo?: string | null, domainName?: string | null, inviteHash?: string | null, allowImpersonation: boolean, activationStatus: WorkspaceActivationStatus, metadataVersion: number, workspaceMembersCount?: number | null, featureFlags?: Array<{ __typename?: 'FeatureFlag', id: any, key: string, value: boolean, workspaceId: string }> | null, currentBillingSubscription?: { __typename?: 'BillingSubscription', id: any, status: SubscriptionStatus, interval?: SubscriptionInterval | null } | null }, workspaces: Array<{ __typename?: 'UserWorkspace', workspace?: { __typename?: 'Workspace', id: any, logo?: string | null, displayName?: string | null, domainName?: string | null } | null }> };
+export type UpdateWorkspaceFeatureFlagMutationVariables = Exact<{
+  workspaceId: Scalars['String'];
+  featureFlag: Scalars['String'];
+  value: Scalars['Boolean'];
+}>;
+
+
+export type UpdateWorkspaceFeatureFlagMutation = { __typename?: 'Mutation', updateWorkspaceFeatureFlag: boolean };
+
+export type UserLookupAdminPanelMutationVariables = Exact<{
+  userIdentifier: Scalars['String'];
+}>;
+
+
+export type UserLookupAdminPanelMutation = { __typename?: 'Mutation', userLookupAdminPanel: { __typename?: 'UserLookup', user: { __typename?: 'UserInfo', id: string, email: string, firstName?: string | null, lastName?: string | null }, workspaces: Array<{ __typename?: 'WorkspaceInfo', id: string, name: string, logo?: string | null, totalUsers: number, allowImpersonation: boolean, users: Array<{ __typename?: 'UserInfo', id: string, email: string, firstName?: string | null, lastName?: string | null }>, featureFlags: Array<{ __typename?: 'FeatureFlag', key: FeatureFlagKey, value: boolean }> }> } };
+
+export type CreateOidcIdentityProviderMutationVariables = Exact<{
+  input: SetupOidcSsoInput;
+}>;
+
+
+export type CreateOidcIdentityProviderMutation = { __typename?: 'Mutation', createOIDCIdentityProvider: { __typename?: 'SetupSsoOutput', id: string, type: IdentityProviderType, issuer: string, name: string, status: SsoIdentityProviderStatus } };
+
+export type CreateSamlIdentityProviderMutationVariables = Exact<{
+  input: SetupSamlSsoInput;
+}>;
+
+
+export type CreateSamlIdentityProviderMutation = { __typename?: 'Mutation', createSAMLIdentityProvider: { __typename?: 'SetupSsoOutput', id: string, type: IdentityProviderType, issuer: string, name: string, status: SsoIdentityProviderStatus } };
+
+export type DeleteSsoIdentityProviderMutationVariables = Exact<{
+  input: DeleteSsoInput;
+}>;
+
+
+export type DeleteSsoIdentityProviderMutation = { __typename?: 'Mutation', deleteSSOIdentityProvider: { __typename?: 'DeleteSsoOutput', identityProviderId: string } };
+
+export type EditSsoIdentityProviderMutationVariables = Exact<{
+  input: EditSsoInput;
+}>;
+
+
+export type EditSsoIdentityProviderMutation = { __typename?: 'Mutation', editSSOIdentityProvider: { __typename?: 'EditSsoOutput', id: string, type: IdentityProviderType, issuer: string, name: string, status: SsoIdentityProviderStatus } };
+
+export type ListSsoIdentityProvidersByWorkspaceIdQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ListSsoIdentityProvidersByWorkspaceIdQuery = { __typename?: 'Query', listSSOIdentityProvidersByWorkspaceId: Array<{ __typename?: 'FindAvailableSSOIDPOutput', type: IdentityProviderType, id: string, name: string, issuer: string, status: SsoIdentityProviderStatus }> };
+
+export type UserQueryFragmentFragment = { __typename?: 'User', id: any, firstName: string, lastName: string, email: string, canImpersonate: boolean, supportUserHash?: string | null, onboardingStatus?: OnboardingStatus | null, userVars: any, analyticsTinybirdJwts?: { __typename?: 'AnalyticsTinybirdJwtMap', getWebhookAnalytics: string, getPageviewsAnalytics: string, getUsersAnalytics: string, getServerlessFunctionDuration: string, getServerlessFunctionSuccessRate: string, getServerlessFunctionErrorCount: string } | null, workspaceMember?: { __typename?: 'WorkspaceMember', id: any, colorScheme: string, avatarUrl?: string | null, locale?: string | null, timeZone?: string | null, dateFormat?: WorkspaceMemberDateFormatEnum | null, timeFormat?: WorkspaceMemberTimeFormatEnum | null, name: { __typename?: 'FullName', firstName: string, lastName: string } } | null, workspaceMembers?: Array<{ __typename?: 'WorkspaceMember', id: any, colorScheme: string, avatarUrl?: string | null, locale?: string | null, timeZone?: string | null, dateFormat?: WorkspaceMemberDateFormatEnum | null, timeFormat?: WorkspaceMemberTimeFormatEnum | null, name: { __typename?: 'FullName', firstName: string, lastName: string } }> | null, currentWorkspace?: { __typename?: 'Workspace', id: any, displayName?: string | null, logo?: string | null, domainName?: string | null, inviteHash?: string | null, allowImpersonation: boolean, activationStatus: WorkspaceActivationStatus, isPublicInviteLinkEnabled: boolean, isGoogleAuthEnabled: boolean, isMicrosoftAuthEnabled: boolean, isPasswordAuthEnabled: boolean, subdomain: string, hasValidEntrepriseKey: boolean, metadataVersion: number, workspaceMembersCount?: number | null, featureFlags?: Array<{ __typename?: 'FeatureFlag', id: any, key: FeatureFlagKey, value: boolean, workspaceId: string }> | null, currentBillingSubscription?: { __typename?: 'BillingSubscription', id: any, status: SubscriptionStatus, interval?: SubscriptionInterval | null } | null } | null, workspaces: Array<{ __typename?: 'UserWorkspace', workspace?: { __typename?: 'Workspace', id: any, logo?: string | null, displayName?: string | null, domainName?: string | null, subdomain: string } | null }> };
 
 export type DeleteUserAccountMutationVariables = Exact<{ [key: string]: never; }>;
 
@@ -1623,7 +2176,7 @@ export type UploadProfilePictureMutation = { __typename?: 'Mutation', uploadProf
 export type GetCurrentUserQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetCurrentUserQuery = { __typename?: 'Query', currentUser: { __typename?: 'User', id: any, firstName: string, lastName: string, email: string, canImpersonate: boolean, supportUserHash?: string | null, onboardingStatus?: OnboardingStatus | null, userVars: any, workspaceMember?: { __typename?: 'WorkspaceMember', id: any, colorScheme: string, avatarUrl?: string | null, locale?: string | null, timeZone?: string | null, dateFormat?: WorkspaceMemberDateFormatEnum | null, timeFormat?: WorkspaceMemberTimeFormatEnum | null, name: { __typename?: 'FullName', firstName: string, lastName: string } } | null, workspaceMembers?: Array<{ __typename?: 'WorkspaceMember', id: any, colorScheme: string, avatarUrl?: string | null, locale?: string | null, timeZone?: string | null, dateFormat?: WorkspaceMemberDateFormatEnum | null, timeFormat?: WorkspaceMemberTimeFormatEnum | null, name: { __typename?: 'FullName', firstName: string, lastName: string } }> | null, defaultWorkspace: { __typename?: 'Workspace', id: any, displayName?: string | null, logo?: string | null, domainName?: string | null, inviteHash?: string | null, allowImpersonation: boolean, activationStatus: WorkspaceActivationStatus, metadataVersion: number, workspaceMembersCount?: number | null, featureFlags?: Array<{ __typename?: 'FeatureFlag', id: any, key: string, value: boolean, workspaceId: string }> | null, currentBillingSubscription?: { __typename?: 'BillingSubscription', id: any, status: SubscriptionStatus, interval?: SubscriptionInterval | null } | null }, workspaces: Array<{ __typename?: 'UserWorkspace', workspace?: { __typename?: 'Workspace', id: any, logo?: string | null, displayName?: string | null, domainName?: string | null } | null }> } };
+export type GetCurrentUserQuery = { __typename?: 'Query', currentUser: { __typename?: 'User', id: any, firstName: string, lastName: string, email: string, canImpersonate: boolean, supportUserHash?: string | null, onboardingStatus?: OnboardingStatus | null, userVars: any, analyticsTinybirdJwts?: { __typename?: 'AnalyticsTinybirdJwtMap', getWebhookAnalytics: string, getPageviewsAnalytics: string, getUsersAnalytics: string, getServerlessFunctionDuration: string, getServerlessFunctionSuccessRate: string, getServerlessFunctionErrorCount: string } | null, workspaceMember?: { __typename?: 'WorkspaceMember', id: any, colorScheme: string, avatarUrl?: string | null, locale?: string | null, timeZone?: string | null, dateFormat?: WorkspaceMemberDateFormatEnum | null, timeFormat?: WorkspaceMemberTimeFormatEnum | null, name: { __typename?: 'FullName', firstName: string, lastName: string } } | null, workspaceMembers?: Array<{ __typename?: 'WorkspaceMember', id: any, colorScheme: string, avatarUrl?: string | null, locale?: string | null, timeZone?: string | null, dateFormat?: WorkspaceMemberDateFormatEnum | null, timeFormat?: WorkspaceMemberTimeFormatEnum | null, name: { __typename?: 'FullName', firstName: string, lastName: string } }> | null, currentWorkspace?: { __typename?: 'Workspace', id: any, displayName?: string | null, logo?: string | null, domainName?: string | null, inviteHash?: string | null, allowImpersonation: boolean, activationStatus: WorkspaceActivationStatus, isPublicInviteLinkEnabled: boolean, isGoogleAuthEnabled: boolean, isMicrosoftAuthEnabled: boolean, isPasswordAuthEnabled: boolean, subdomain: string, hasValidEntrepriseKey: boolean, metadataVersion: number, workspaceMembersCount?: number | null, featureFlags?: Array<{ __typename?: 'FeatureFlag', id: any, key: FeatureFlagKey, value: boolean, workspaceId: string }> | null, currentBillingSubscription?: { __typename?: 'BillingSubscription', id: any, status: SubscriptionStatus, interval?: SubscriptionInterval | null } | null } | null, workspaces: Array<{ __typename?: 'UserWorkspace', workspace?: { __typename?: 'Workspace', id: any, logo?: string | null, displayName?: string | null, domainName?: string | null, subdomain: string } | null }> } };
 
 export type ActivateWorkflowVersionMutationVariables = Exact<{
   workflowVersionId: Scalars['String'];
@@ -1632,12 +2185,54 @@ export type ActivateWorkflowVersionMutationVariables = Exact<{
 
 export type ActivateWorkflowVersionMutation = { __typename?: 'Mutation', activateWorkflowVersion: boolean };
 
+export type ComputeStepOutputSchemaMutationVariables = Exact<{
+  input: ComputeStepOutputSchemaInput;
+}>;
+
+
+export type ComputeStepOutputSchemaMutation = { __typename?: 'Mutation', computeStepOutputSchema: any };
+
+export type CreateWorkflowVersionStepMutationVariables = Exact<{
+  input: CreateWorkflowVersionStepInput;
+}>;
+
+
+export type CreateWorkflowVersionStepMutation = { __typename?: 'Mutation', createWorkflowVersionStep: { __typename?: 'WorkflowAction', id: any, name: string, type: string, settings: any, valid: boolean } };
+
 export type DeactivateWorkflowVersionMutationVariables = Exact<{
   workflowVersionId: Scalars['String'];
 }>;
 
 
 export type DeactivateWorkflowVersionMutation = { __typename?: 'Mutation', deactivateWorkflowVersion: boolean };
+
+export type DeleteWorkflowVersionStepMutationVariables = Exact<{
+  input: DeleteWorkflowVersionStepInput;
+}>;
+
+
+export type DeleteWorkflowVersionStepMutation = { __typename?: 'Mutation', deleteWorkflowVersionStep: { __typename?: 'WorkflowAction', id: any, name: string, type: string, settings: any, valid: boolean } };
+
+export type CreateDraftFromWorkflowVersionMutationVariables = Exact<{
+  input: CreateDraftFromWorkflowVersionInput;
+}>;
+
+
+export type CreateDraftFromWorkflowVersionMutation = { __typename?: 'Mutation', createDraftFromWorkflowVersion: boolean };
+
+export type RunWorkflowVersionMutationVariables = Exact<{
+  input: RunWorkflowVersionInput;
+}>;
+
+
+export type RunWorkflowVersionMutation = { __typename?: 'Mutation', runWorkflowVersion: { __typename?: 'WorkflowRun', workflowRunId: any } };
+
+export type UpdateWorkflowVersionStepMutationVariables = Exact<{
+  input: UpdateWorkflowVersionStepInput;
+}>;
+
+
+export type UpdateWorkflowVersionStepMutation = { __typename?: 'Mutation', updateWorkflowVersionStep: { __typename?: 'WorkflowAction', id: any, name: string, type: string, settings: any, valid: boolean } };
 
 export type DeleteWorkspaceInvitationMutationVariables = Exact<{
   appTokenId: Scalars['String'];
@@ -1686,7 +2281,7 @@ export type ActivateWorkspaceMutationVariables = Exact<{
 }>;
 
 
-export type ActivateWorkspaceMutation = { __typename?: 'Mutation', activateWorkspace: { __typename?: 'Workspace', id: any } };
+export type ActivateWorkspaceMutation = { __typename?: 'Mutation', activateWorkspace: { __typename?: 'Workspace', id: any, subdomain: string } };
 
 export type DeleteCurrentWorkspaceMutationVariables = Exact<{ [key: string]: never; }>;
 
@@ -1698,7 +2293,7 @@ export type UpdateWorkspaceMutationVariables = Exact<{
 }>;
 
 
-export type UpdateWorkspaceMutation = { __typename?: 'Mutation', updateWorkspace: { __typename?: 'Workspace', id: any, domainName?: string | null, displayName?: string | null, logo?: string | null, allowImpersonation: boolean } };
+export type UpdateWorkspaceMutation = { __typename?: 'Mutation', updateWorkspace: { __typename?: 'Workspace', id: any, domainName?: string | null, subdomain: string, displayName?: string | null, logo?: string | null, allowImpersonation: boolean, isPublicInviteLinkEnabled: boolean, isGoogleAuthEnabled: boolean, isMicrosoftAuthEnabled: boolean, isPasswordAuthEnabled: boolean } };
 
 export type UploadWorkspaceLogoMutationVariables = Exact<{
   file: Scalars['Upload'];
@@ -1801,6 +2396,18 @@ export const AuthTokensFragmentFragmentDoc = gql`
   }
 }
     ${AuthTokenFragmentFragmentDoc}`;
+export const AvailableSsoIdentityProvidersFragmentFragmentDoc = gql`
+    fragment AvailableSSOIdentityProvidersFragment on FindAvailableSSOIDPOutput {
+  id
+  issuer
+  name
+  status
+  workspace {
+    id
+    displayName
+  }
+}
+    `;
 export const WorkspaceMemberQueryFragmentFragmentDoc = gql`
     fragment WorkspaceMemberQueryFragment on WorkspaceMember {
   id
@@ -1824,6 +2431,14 @@ export const UserQueryFragmentFragmentDoc = gql`
   email
   canImpersonate
   supportUserHash
+  analyticsTinybirdJwts {
+    getWebhookAnalytics
+    getPageviewsAnalytics
+    getUsersAnalytics
+    getServerlessFunctionDuration
+    getServerlessFunctionSuccessRate
+    getServerlessFunctionErrorCount
+  }
   onboardingStatus
   workspaceMember {
     ...WorkspaceMemberQueryFragment
@@ -1831,7 +2446,7 @@ export const UserQueryFragmentFragmentDoc = gql`
   workspaceMembers {
     ...WorkspaceMemberQueryFragment
   }
-  defaultWorkspace {
+  currentWorkspace {
     id
     displayName
     logo
@@ -1839,6 +2454,12 @@ export const UserQueryFragmentFragmentDoc = gql`
     inviteHash
     allowImpersonation
     activationStatus
+    isPublicInviteLinkEnabled
+    isGoogleAuthEnabled
+    isMicrosoftAuthEnabled
+    isPasswordAuthEnabled
+    subdomain
+    hasValidEntrepriseKey
     featureFlags {
       id
       key
@@ -1859,6 +2480,7 @@ export const UserQueryFragmentFragmentDoc = gql`
       logo
       displayName
       domainName
+      subdomain
     }
   }
   userVars
@@ -2269,41 +2891,6 @@ export function useGenerateApiKeyTokenMutation(baseOptions?: Apollo.MutationHook
 export type GenerateApiKeyTokenMutationHookResult = ReturnType<typeof useGenerateApiKeyTokenMutation>;
 export type GenerateApiKeyTokenMutationResult = Apollo.MutationResult<GenerateApiKeyTokenMutation>;
 export type GenerateApiKeyTokenMutationOptions = Apollo.BaseMutationOptions<GenerateApiKeyTokenMutation, GenerateApiKeyTokenMutationVariables>;
-export const GenerateJwtDocument = gql`
-    mutation GenerateJWT($workspaceId: String!) {
-  generateJWT(workspaceId: $workspaceId) {
-    tokens {
-      ...AuthTokensFragment
-    }
-  }
-}
-    ${AuthTokensFragmentFragmentDoc}`;
-export type GenerateJwtMutationFn = Apollo.MutationFunction<GenerateJwtMutation, GenerateJwtMutationVariables>;
-
-/**
- * __useGenerateJwtMutation__
- *
- * To run a mutation, you first call `useGenerateJwtMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useGenerateJwtMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [generateJwtMutation, { data, loading, error }] = useGenerateJwtMutation({
- *   variables: {
- *      workspaceId: // value for 'workspaceId'
- *   },
- * });
- */
-export function useGenerateJwtMutation(baseOptions?: Apollo.MutationHookOptions<GenerateJwtMutation, GenerateJwtMutationVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useMutation<GenerateJwtMutation, GenerateJwtMutationVariables>(GenerateJwtDocument, options);
-      }
-export type GenerateJwtMutationHookResult = ReturnType<typeof useGenerateJwtMutation>;
-export type GenerateJwtMutationResult = Apollo.MutationResult<GenerateJwtMutation>;
-export type GenerateJwtMutationOptions = Apollo.BaseMutationOptions<GenerateJwtMutation, GenerateJwtMutationVariables>;
 export const GenerateTransientTokenDocument = gql`
     mutation generateTransientToken {
   generateTransientToken {
@@ -2338,19 +2925,93 @@ export function useGenerateTransientTokenMutation(baseOptions?: Apollo.MutationH
 export type GenerateTransientTokenMutationHookResult = ReturnType<typeof useGenerateTransientTokenMutation>;
 export type GenerateTransientTokenMutationResult = Apollo.MutationResult<GenerateTransientTokenMutation>;
 export type GenerateTransientTokenMutationOptions = Apollo.BaseMutationOptions<GenerateTransientTokenMutation, GenerateTransientTokenMutationVariables>;
-export const ImpersonateDocument = gql`
-    mutation Impersonate($userId: String!) {
-  impersonate(userId: $userId) {
-    user {
-      ...UserQueryFragment
-    }
-    tokens {
-      ...AuthTokensFragment
+export const GetAuthorizationUrlDocument = gql`
+    mutation GetAuthorizationUrl($input: GetAuthorizationUrlInput!) {
+  getAuthorizationUrl(input: $input) {
+    id
+    type
+    authorizationURL
+  }
+}
+    `;
+export type GetAuthorizationUrlMutationFn = Apollo.MutationFunction<GetAuthorizationUrlMutation, GetAuthorizationUrlMutationVariables>;
+
+/**
+ * __useGetAuthorizationUrlMutation__
+ *
+ * To run a mutation, you first call `useGetAuthorizationUrlMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useGetAuthorizationUrlMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [getAuthorizationUrlMutation, { data, loading, error }] = useGetAuthorizationUrlMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useGetAuthorizationUrlMutation(baseOptions?: Apollo.MutationHookOptions<GetAuthorizationUrlMutation, GetAuthorizationUrlMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<GetAuthorizationUrlMutation, GetAuthorizationUrlMutationVariables>(GetAuthorizationUrlDocument, options);
+      }
+export type GetAuthorizationUrlMutationHookResult = ReturnType<typeof useGetAuthorizationUrlMutation>;
+export type GetAuthorizationUrlMutationResult = Apollo.MutationResult<GetAuthorizationUrlMutation>;
+export type GetAuthorizationUrlMutationOptions = Apollo.BaseMutationOptions<GetAuthorizationUrlMutation, GetAuthorizationUrlMutationVariables>;
+export const GetLoginTokenFromEmailVerificationTokenDocument = gql`
+    mutation GetLoginTokenFromEmailVerificationToken($emailVerificationToken: String!, $captchaToken: String) {
+  getLoginTokenFromEmailVerificationToken(
+    emailVerificationToken: $emailVerificationToken
+    captchaToken: $captchaToken
+  ) {
+    loginToken {
+      ...AuthTokenFragment
     }
   }
 }
-    ${UserQueryFragmentFragmentDoc}
-${AuthTokensFragmentFragmentDoc}`;
+    ${AuthTokenFragmentFragmentDoc}`;
+export type GetLoginTokenFromEmailVerificationTokenMutationFn = Apollo.MutationFunction<GetLoginTokenFromEmailVerificationTokenMutation, GetLoginTokenFromEmailVerificationTokenMutationVariables>;
+
+/**
+ * __useGetLoginTokenFromEmailVerificationTokenMutation__
+ *
+ * To run a mutation, you first call `useGetLoginTokenFromEmailVerificationTokenMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useGetLoginTokenFromEmailVerificationTokenMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [getLoginTokenFromEmailVerificationTokenMutation, { data, loading, error }] = useGetLoginTokenFromEmailVerificationTokenMutation({
+ *   variables: {
+ *      emailVerificationToken: // value for 'emailVerificationToken'
+ *      captchaToken: // value for 'captchaToken'
+ *   },
+ * });
+ */
+export function useGetLoginTokenFromEmailVerificationTokenMutation(baseOptions?: Apollo.MutationHookOptions<GetLoginTokenFromEmailVerificationTokenMutation, GetLoginTokenFromEmailVerificationTokenMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<GetLoginTokenFromEmailVerificationTokenMutation, GetLoginTokenFromEmailVerificationTokenMutationVariables>(GetLoginTokenFromEmailVerificationTokenDocument, options);
+      }
+export type GetLoginTokenFromEmailVerificationTokenMutationHookResult = ReturnType<typeof useGetLoginTokenFromEmailVerificationTokenMutation>;
+export type GetLoginTokenFromEmailVerificationTokenMutationResult = Apollo.MutationResult<GetLoginTokenFromEmailVerificationTokenMutation>;
+export type GetLoginTokenFromEmailVerificationTokenMutationOptions = Apollo.BaseMutationOptions<GetLoginTokenFromEmailVerificationTokenMutation, GetLoginTokenFromEmailVerificationTokenMutationVariables>;
+export const ImpersonateDocument = gql`
+    mutation Impersonate($userId: String!, $workspaceId: String!) {
+  impersonate(userId: $userId, workspaceId: $workspaceId) {
+    workspace {
+      subdomain
+      id
+    }
+    loginToken {
+      ...AuthTokenFragment
+    }
+  }
+}
+    ${AuthTokenFragmentFragmentDoc}`;
 export type ImpersonateMutationFn = Apollo.MutationFunction<ImpersonateMutation, ImpersonateMutationVariables>;
 
 /**
@@ -2367,6 +3028,7 @@ export type ImpersonateMutationFn = Apollo.MutationFunction<ImpersonateMutation,
  * const [impersonateMutation, { data, loading, error }] = useImpersonateMutation({
  *   variables: {
  *      userId: // value for 'userId'
+ *      workspaceId: // value for 'workspaceId'
  *   },
  * });
  */
@@ -2412,17 +3074,55 @@ export function useRenewTokenMutation(baseOptions?: Apollo.MutationHookOptions<R
 export type RenewTokenMutationHookResult = ReturnType<typeof useRenewTokenMutation>;
 export type RenewTokenMutationResult = Apollo.MutationResult<RenewTokenMutation>;
 export type RenewTokenMutationOptions = Apollo.BaseMutationOptions<RenewTokenMutation, RenewTokenMutationVariables>;
+export const ResendEmailVerificationTokenDocument = gql`
+    mutation ResendEmailVerificationToken($email: String!) {
+  resendEmailVerificationToken(email: $email) {
+    success
+  }
+}
+    `;
+export type ResendEmailVerificationTokenMutationFn = Apollo.MutationFunction<ResendEmailVerificationTokenMutation, ResendEmailVerificationTokenMutationVariables>;
+
+/**
+ * __useResendEmailVerificationTokenMutation__
+ *
+ * To run a mutation, you first call `useResendEmailVerificationTokenMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useResendEmailVerificationTokenMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [resendEmailVerificationTokenMutation, { data, loading, error }] = useResendEmailVerificationTokenMutation({
+ *   variables: {
+ *      email: // value for 'email'
+ *   },
+ * });
+ */
+export function useResendEmailVerificationTokenMutation(baseOptions?: Apollo.MutationHookOptions<ResendEmailVerificationTokenMutation, ResendEmailVerificationTokenMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<ResendEmailVerificationTokenMutation, ResendEmailVerificationTokenMutationVariables>(ResendEmailVerificationTokenDocument, options);
+      }
+export type ResendEmailVerificationTokenMutationHookResult = ReturnType<typeof useResendEmailVerificationTokenMutation>;
+export type ResendEmailVerificationTokenMutationResult = Apollo.MutationResult<ResendEmailVerificationTokenMutation>;
+export type ResendEmailVerificationTokenMutationOptions = Apollo.BaseMutationOptions<ResendEmailVerificationTokenMutation, ResendEmailVerificationTokenMutationVariables>;
 export const SignUpDocument = gql`
-    mutation SignUp($email: String!, $password: String!, $workspaceInviteHash: String, $workspacePersonalInviteToken: String = null, $captchaToken: String) {
+    mutation SignUp($email: String!, $password: String!, $workspaceInviteHash: String, $workspacePersonalInviteToken: String = null, $captchaToken: String, $workspaceId: String) {
   signUp(
     email: $email
     password: $password
     workspaceInviteHash: $workspaceInviteHash
     workspacePersonalInviteToken: $workspacePersonalInviteToken
     captchaToken: $captchaToken
+    workspaceId: $workspaceId
   ) {
     loginToken {
       ...AuthTokenFragment
+    }
+    workspace {
+      id
+      subdomain
     }
   }
 }
@@ -2447,6 +3147,7 @@ export type SignUpMutationFn = Apollo.MutationFunction<SignUpMutation, SignUpMut
  *      workspaceInviteHash: // value for 'workspaceInviteHash'
  *      workspacePersonalInviteToken: // value for 'workspacePersonalInviteToken'
  *      captchaToken: // value for 'captchaToken'
+ *      workspaceId: // value for 'workspaceId'
  *   },
  * });
  */
@@ -2457,6 +3158,53 @@ export function useSignUpMutation(baseOptions?: Apollo.MutationHookOptions<SignU
 export type SignUpMutationHookResult = ReturnType<typeof useSignUpMutation>;
 export type SignUpMutationResult = Apollo.MutationResult<SignUpMutation>;
 export type SignUpMutationOptions = Apollo.BaseMutationOptions<SignUpMutation, SignUpMutationVariables>;
+export const SwitchWorkspaceDocument = gql`
+    mutation SwitchWorkspace($workspaceId: String!) {
+  switchWorkspace(workspaceId: $workspaceId) {
+    id
+    subdomain
+    authProviders {
+      sso {
+        id
+        name
+        type
+        status
+        issuer
+      }
+      google
+      magicLink
+      password
+      microsoft
+    }
+  }
+}
+    `;
+export type SwitchWorkspaceMutationFn = Apollo.MutationFunction<SwitchWorkspaceMutation, SwitchWorkspaceMutationVariables>;
+
+/**
+ * __useSwitchWorkspaceMutation__
+ *
+ * To run a mutation, you first call `useSwitchWorkspaceMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useSwitchWorkspaceMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [switchWorkspaceMutation, { data, loading, error }] = useSwitchWorkspaceMutation({
+ *   variables: {
+ *      workspaceId: // value for 'workspaceId'
+ *   },
+ * });
+ */
+export function useSwitchWorkspaceMutation(baseOptions?: Apollo.MutationHookOptions<SwitchWorkspaceMutation, SwitchWorkspaceMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<SwitchWorkspaceMutation, SwitchWorkspaceMutationVariables>(SwitchWorkspaceDocument, options);
+      }
+export type SwitchWorkspaceMutationHookResult = ReturnType<typeof useSwitchWorkspaceMutation>;
+export type SwitchWorkspaceMutationResult = Apollo.MutationResult<SwitchWorkspaceMutation>;
+export type SwitchWorkspaceMutationOptions = Apollo.BaseMutationOptions<SwitchWorkspaceMutation, SwitchWorkspaceMutationVariables>;
 export const UpdatePasswordViaResetTokenDocument = gql`
     mutation UpdatePasswordViaResetToken($token: String!, $newPassword: String!) {
   updatePasswordViaResetToken(
@@ -2497,16 +3245,12 @@ export type UpdatePasswordViaResetTokenMutationOptions = Apollo.BaseMutationOpti
 export const VerifyDocument = gql`
     mutation Verify($loginToken: String!) {
   verify(loginToken: $loginToken) {
-    user {
-      ...UserQueryFragment
-    }
     tokens {
       ...AuthTokensFragment
     }
   }
 }
-    ${UserQueryFragmentFragmentDoc}
-${AuthTokensFragmentFragmentDoc}`;
+    ${AuthTokensFragmentFragmentDoc}`;
 export type VerifyMutationFn = Apollo.MutationFunction<VerifyMutation, VerifyMutationVariables>;
 
 /**
@@ -2536,7 +3280,27 @@ export type VerifyMutationOptions = Apollo.BaseMutationOptions<VerifyMutation, V
 export const CheckUserExistsDocument = gql`
     query CheckUserExists($email: String!, $captchaToken: String) {
   checkUserExists(email: $email, captchaToken: $captchaToken) {
-    exists
+    __typename
+    ... on UserExists {
+      exists
+      availableWorkspaces {
+        id
+        displayName
+        subdomain
+        logo
+        sso {
+          type
+          id
+          issuer
+          name
+          status
+        }
+      }
+      isEmailVerified
+    }
+    ... on UserNotExists {
+      exists
+    }
   }
 }
     `;
@@ -2569,6 +3333,56 @@ export function useCheckUserExistsLazyQuery(baseOptions?: Apollo.LazyQueryHookOp
 export type CheckUserExistsQueryHookResult = ReturnType<typeof useCheckUserExistsQuery>;
 export type CheckUserExistsLazyQueryHookResult = ReturnType<typeof useCheckUserExistsLazyQuery>;
 export type CheckUserExistsQueryResult = Apollo.QueryResult<CheckUserExistsQuery, CheckUserExistsQueryVariables>;
+export const GetPublicWorkspaceDataBySubdomainDocument = gql`
+    query GetPublicWorkspaceDataBySubdomain {
+  getPublicWorkspaceDataBySubdomain {
+    id
+    logo
+    displayName
+    subdomain
+    authProviders {
+      sso {
+        id
+        name
+        type
+        status
+        issuer
+      }
+      google
+      magicLink
+      password
+      microsoft
+    }
+  }
+}
+    `;
+
+/**
+ * __useGetPublicWorkspaceDataBySubdomainQuery__
+ *
+ * To run a query within a React component, call `useGetPublicWorkspaceDataBySubdomainQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetPublicWorkspaceDataBySubdomainQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetPublicWorkspaceDataBySubdomainQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useGetPublicWorkspaceDataBySubdomainQuery(baseOptions?: Apollo.QueryHookOptions<GetPublicWorkspaceDataBySubdomainQuery, GetPublicWorkspaceDataBySubdomainQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetPublicWorkspaceDataBySubdomainQuery, GetPublicWorkspaceDataBySubdomainQueryVariables>(GetPublicWorkspaceDataBySubdomainDocument, options);
+      }
+export function useGetPublicWorkspaceDataBySubdomainLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetPublicWorkspaceDataBySubdomainQuery, GetPublicWorkspaceDataBySubdomainQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetPublicWorkspaceDataBySubdomainQuery, GetPublicWorkspaceDataBySubdomainQueryVariables>(GetPublicWorkspaceDataBySubdomainDocument, options);
+        }
+export type GetPublicWorkspaceDataBySubdomainQueryHookResult = ReturnType<typeof useGetPublicWorkspaceDataBySubdomainQuery>;
+export type GetPublicWorkspaceDataBySubdomainLazyQueryHookResult = ReturnType<typeof useGetPublicWorkspaceDataBySubdomainLazyQuery>;
+export type GetPublicWorkspaceDataBySubdomainQueryResult = Apollo.QueryResult<GetPublicWorkspaceDataBySubdomainQuery, GetPublicWorkspaceDataBySubdomainQueryVariables>;
 export const ValidatePasswordResetTokenDocument = gql`
     query ValidatePasswordResetToken($token: String!) {
   validatePasswordResetToken(passwordResetToken: $token) {
@@ -2641,10 +3455,12 @@ export type BillingPortalSessionQueryHookResult = ReturnType<typeof useBillingPo
 export type BillingPortalSessionLazyQueryHookResult = ReturnType<typeof useBillingPortalSessionLazyQuery>;
 export type BillingPortalSessionQueryResult = Apollo.QueryResult<BillingPortalSessionQuery, BillingPortalSessionQueryVariables>;
 export const CheckoutSessionDocument = gql`
-    mutation CheckoutSession($recurringInterval: SubscriptionInterval!, $successUrlPath: String) {
+    mutation CheckoutSession($recurringInterval: SubscriptionInterval!, $successUrlPath: String, $plan: BillingPlanKey!, $requirePaymentMethod: Boolean!) {
   checkoutSession(
     recurringInterval: $recurringInterval
     successUrlPath: $successUrlPath
+    plan: $plan
+    requirePaymentMethod: $requirePaymentMethod
   ) {
     url
   }
@@ -2667,6 +3483,8 @@ export type CheckoutSessionMutationFn = Apollo.MutationFunction<CheckoutSessionM
  *   variables: {
  *      recurringInterval: // value for 'recurringInterval'
  *      successUrlPath: // value for 'successUrlPath'
+ *      plan: // value for 'plan'
+ *      requirePaymentMethod: // value for 'requirePaymentMethod'
  *   },
  * });
  */
@@ -2752,19 +3570,33 @@ export type UpdateBillingSubscriptionMutationOptions = Apollo.BaseMutationOption
 export const GetClientConfigDocument = gql`
     query GetClientConfig {
   clientConfig {
+    billing {
+      isBillingEnabled
+      billingUrl
+      trialPeriods {
+        duration
+        isCreditCardRequired
+      }
+    }
     authProviders {
       google
       password
       microsoft
-    }
-    billing {
-      isBillingEnabled
-      billingUrl
-      billingFreeTrialDurationInDays
+      sso {
+        id
+        name
+        type
+        status
+        issuer
+      }
     }
     signInPrefilled
-    signUpDisabled
+    isMultiWorkspaceEnabled
+    isEmailVerificationRequired
+    defaultSubdomain
+    frontDomain
     debugMode
+    analyticsEnabled
     support {
       supportDriver
       supportFrontChatId
@@ -2782,6 +3614,7 @@ export const GetClientConfigDocument = gql`
       mutationMaximumAffectedRecords
     }
     chromeExtensionId
+    canManageFeatureFlags
   }
 }
     `;
@@ -2844,6 +3677,280 @@ export function useSkipSyncEmailOnboardingStepMutation(baseOptions?: Apollo.Muta
 export type SkipSyncEmailOnboardingStepMutationHookResult = ReturnType<typeof useSkipSyncEmailOnboardingStepMutation>;
 export type SkipSyncEmailOnboardingStepMutationResult = Apollo.MutationResult<SkipSyncEmailOnboardingStepMutation>;
 export type SkipSyncEmailOnboardingStepMutationOptions = Apollo.BaseMutationOptions<SkipSyncEmailOnboardingStepMutation, SkipSyncEmailOnboardingStepMutationVariables>;
+export const UpdateWorkspaceFeatureFlagDocument = gql`
+    mutation UpdateWorkspaceFeatureFlag($workspaceId: String!, $featureFlag: String!, $value: Boolean!) {
+  updateWorkspaceFeatureFlag(
+    workspaceId: $workspaceId
+    featureFlag: $featureFlag
+    value: $value
+  )
+}
+    `;
+export type UpdateWorkspaceFeatureFlagMutationFn = Apollo.MutationFunction<UpdateWorkspaceFeatureFlagMutation, UpdateWorkspaceFeatureFlagMutationVariables>;
+
+/**
+ * __useUpdateWorkspaceFeatureFlagMutation__
+ *
+ * To run a mutation, you first call `useUpdateWorkspaceFeatureFlagMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateWorkspaceFeatureFlagMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateWorkspaceFeatureFlagMutation, { data, loading, error }] = useUpdateWorkspaceFeatureFlagMutation({
+ *   variables: {
+ *      workspaceId: // value for 'workspaceId'
+ *      featureFlag: // value for 'featureFlag'
+ *      value: // value for 'value'
+ *   },
+ * });
+ */
+export function useUpdateWorkspaceFeatureFlagMutation(baseOptions?: Apollo.MutationHookOptions<UpdateWorkspaceFeatureFlagMutation, UpdateWorkspaceFeatureFlagMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<UpdateWorkspaceFeatureFlagMutation, UpdateWorkspaceFeatureFlagMutationVariables>(UpdateWorkspaceFeatureFlagDocument, options);
+      }
+export type UpdateWorkspaceFeatureFlagMutationHookResult = ReturnType<typeof useUpdateWorkspaceFeatureFlagMutation>;
+export type UpdateWorkspaceFeatureFlagMutationResult = Apollo.MutationResult<UpdateWorkspaceFeatureFlagMutation>;
+export type UpdateWorkspaceFeatureFlagMutationOptions = Apollo.BaseMutationOptions<UpdateWorkspaceFeatureFlagMutation, UpdateWorkspaceFeatureFlagMutationVariables>;
+export const UserLookupAdminPanelDocument = gql`
+    mutation UserLookupAdminPanel($userIdentifier: String!) {
+  userLookupAdminPanel(userIdentifier: $userIdentifier) {
+    user {
+      id
+      email
+      firstName
+      lastName
+    }
+    workspaces {
+      id
+      name
+      logo
+      totalUsers
+      allowImpersonation
+      users {
+        id
+        email
+        firstName
+        lastName
+      }
+      featureFlags {
+        key
+        value
+      }
+    }
+  }
+}
+    `;
+export type UserLookupAdminPanelMutationFn = Apollo.MutationFunction<UserLookupAdminPanelMutation, UserLookupAdminPanelMutationVariables>;
+
+/**
+ * __useUserLookupAdminPanelMutation__
+ *
+ * To run a mutation, you first call `useUserLookupAdminPanelMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUserLookupAdminPanelMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [userLookupAdminPanelMutation, { data, loading, error }] = useUserLookupAdminPanelMutation({
+ *   variables: {
+ *      userIdentifier: // value for 'userIdentifier'
+ *   },
+ * });
+ */
+export function useUserLookupAdminPanelMutation(baseOptions?: Apollo.MutationHookOptions<UserLookupAdminPanelMutation, UserLookupAdminPanelMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<UserLookupAdminPanelMutation, UserLookupAdminPanelMutationVariables>(UserLookupAdminPanelDocument, options);
+      }
+export type UserLookupAdminPanelMutationHookResult = ReturnType<typeof useUserLookupAdminPanelMutation>;
+export type UserLookupAdminPanelMutationResult = Apollo.MutationResult<UserLookupAdminPanelMutation>;
+export type UserLookupAdminPanelMutationOptions = Apollo.BaseMutationOptions<UserLookupAdminPanelMutation, UserLookupAdminPanelMutationVariables>;
+export const CreateOidcIdentityProviderDocument = gql`
+    mutation CreateOIDCIdentityProvider($input: SetupOIDCSsoInput!) {
+  createOIDCIdentityProvider(input: $input) {
+    id
+    type
+    issuer
+    name
+    status
+  }
+}
+    `;
+export type CreateOidcIdentityProviderMutationFn = Apollo.MutationFunction<CreateOidcIdentityProviderMutation, CreateOidcIdentityProviderMutationVariables>;
+
+/**
+ * __useCreateOidcIdentityProviderMutation__
+ *
+ * To run a mutation, you first call `useCreateOidcIdentityProviderMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateOidcIdentityProviderMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createOidcIdentityProviderMutation, { data, loading, error }] = useCreateOidcIdentityProviderMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useCreateOidcIdentityProviderMutation(baseOptions?: Apollo.MutationHookOptions<CreateOidcIdentityProviderMutation, CreateOidcIdentityProviderMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<CreateOidcIdentityProviderMutation, CreateOidcIdentityProviderMutationVariables>(CreateOidcIdentityProviderDocument, options);
+      }
+export type CreateOidcIdentityProviderMutationHookResult = ReturnType<typeof useCreateOidcIdentityProviderMutation>;
+export type CreateOidcIdentityProviderMutationResult = Apollo.MutationResult<CreateOidcIdentityProviderMutation>;
+export type CreateOidcIdentityProviderMutationOptions = Apollo.BaseMutationOptions<CreateOidcIdentityProviderMutation, CreateOidcIdentityProviderMutationVariables>;
+export const CreateSamlIdentityProviderDocument = gql`
+    mutation CreateSAMLIdentityProvider($input: SetupSAMLSsoInput!) {
+  createSAMLIdentityProvider(input: $input) {
+    id
+    type
+    issuer
+    name
+    status
+  }
+}
+    `;
+export type CreateSamlIdentityProviderMutationFn = Apollo.MutationFunction<CreateSamlIdentityProviderMutation, CreateSamlIdentityProviderMutationVariables>;
+
+/**
+ * __useCreateSamlIdentityProviderMutation__
+ *
+ * To run a mutation, you first call `useCreateSamlIdentityProviderMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateSamlIdentityProviderMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createSamlIdentityProviderMutation, { data, loading, error }] = useCreateSamlIdentityProviderMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useCreateSamlIdentityProviderMutation(baseOptions?: Apollo.MutationHookOptions<CreateSamlIdentityProviderMutation, CreateSamlIdentityProviderMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<CreateSamlIdentityProviderMutation, CreateSamlIdentityProviderMutationVariables>(CreateSamlIdentityProviderDocument, options);
+      }
+export type CreateSamlIdentityProviderMutationHookResult = ReturnType<typeof useCreateSamlIdentityProviderMutation>;
+export type CreateSamlIdentityProviderMutationResult = Apollo.MutationResult<CreateSamlIdentityProviderMutation>;
+export type CreateSamlIdentityProviderMutationOptions = Apollo.BaseMutationOptions<CreateSamlIdentityProviderMutation, CreateSamlIdentityProviderMutationVariables>;
+export const DeleteSsoIdentityProviderDocument = gql`
+    mutation DeleteSSOIdentityProvider($input: DeleteSsoInput!) {
+  deleteSSOIdentityProvider(input: $input) {
+    identityProviderId
+  }
+}
+    `;
+export type DeleteSsoIdentityProviderMutationFn = Apollo.MutationFunction<DeleteSsoIdentityProviderMutation, DeleteSsoIdentityProviderMutationVariables>;
+
+/**
+ * __useDeleteSsoIdentityProviderMutation__
+ *
+ * To run a mutation, you first call `useDeleteSsoIdentityProviderMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useDeleteSsoIdentityProviderMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [deleteSsoIdentityProviderMutation, { data, loading, error }] = useDeleteSsoIdentityProviderMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useDeleteSsoIdentityProviderMutation(baseOptions?: Apollo.MutationHookOptions<DeleteSsoIdentityProviderMutation, DeleteSsoIdentityProviderMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<DeleteSsoIdentityProviderMutation, DeleteSsoIdentityProviderMutationVariables>(DeleteSsoIdentityProviderDocument, options);
+      }
+export type DeleteSsoIdentityProviderMutationHookResult = ReturnType<typeof useDeleteSsoIdentityProviderMutation>;
+export type DeleteSsoIdentityProviderMutationResult = Apollo.MutationResult<DeleteSsoIdentityProviderMutation>;
+export type DeleteSsoIdentityProviderMutationOptions = Apollo.BaseMutationOptions<DeleteSsoIdentityProviderMutation, DeleteSsoIdentityProviderMutationVariables>;
+export const EditSsoIdentityProviderDocument = gql`
+    mutation EditSSOIdentityProvider($input: EditSsoInput!) {
+  editSSOIdentityProvider(input: $input) {
+    id
+    type
+    issuer
+    name
+    status
+  }
+}
+    `;
+export type EditSsoIdentityProviderMutationFn = Apollo.MutationFunction<EditSsoIdentityProviderMutation, EditSsoIdentityProviderMutationVariables>;
+
+/**
+ * __useEditSsoIdentityProviderMutation__
+ *
+ * To run a mutation, you first call `useEditSsoIdentityProviderMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useEditSsoIdentityProviderMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [editSsoIdentityProviderMutation, { data, loading, error }] = useEditSsoIdentityProviderMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useEditSsoIdentityProviderMutation(baseOptions?: Apollo.MutationHookOptions<EditSsoIdentityProviderMutation, EditSsoIdentityProviderMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<EditSsoIdentityProviderMutation, EditSsoIdentityProviderMutationVariables>(EditSsoIdentityProviderDocument, options);
+      }
+export type EditSsoIdentityProviderMutationHookResult = ReturnType<typeof useEditSsoIdentityProviderMutation>;
+export type EditSsoIdentityProviderMutationResult = Apollo.MutationResult<EditSsoIdentityProviderMutation>;
+export type EditSsoIdentityProviderMutationOptions = Apollo.BaseMutationOptions<EditSsoIdentityProviderMutation, EditSsoIdentityProviderMutationVariables>;
+export const ListSsoIdentityProvidersByWorkspaceIdDocument = gql`
+    query ListSSOIdentityProvidersByWorkspaceId {
+  listSSOIdentityProvidersByWorkspaceId {
+    type
+    id
+    name
+    issuer
+    status
+  }
+}
+    `;
+
+/**
+ * __useListSsoIdentityProvidersByWorkspaceIdQuery__
+ *
+ * To run a query within a React component, call `useListSsoIdentityProvidersByWorkspaceIdQuery` and pass it any options that fit your needs.
+ * When your component renders, `useListSsoIdentityProvidersByWorkspaceIdQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useListSsoIdentityProvidersByWorkspaceIdQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useListSsoIdentityProvidersByWorkspaceIdQuery(baseOptions?: Apollo.QueryHookOptions<ListSsoIdentityProvidersByWorkspaceIdQuery, ListSsoIdentityProvidersByWorkspaceIdQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<ListSsoIdentityProvidersByWorkspaceIdQuery, ListSsoIdentityProvidersByWorkspaceIdQueryVariables>(ListSsoIdentityProvidersByWorkspaceIdDocument, options);
+      }
+export function useListSsoIdentityProvidersByWorkspaceIdLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ListSsoIdentityProvidersByWorkspaceIdQuery, ListSsoIdentityProvidersByWorkspaceIdQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<ListSsoIdentityProvidersByWorkspaceIdQuery, ListSsoIdentityProvidersByWorkspaceIdQueryVariables>(ListSsoIdentityProvidersByWorkspaceIdDocument, options);
+        }
+export type ListSsoIdentityProvidersByWorkspaceIdQueryHookResult = ReturnType<typeof useListSsoIdentityProvidersByWorkspaceIdQuery>;
+export type ListSsoIdentityProvidersByWorkspaceIdLazyQueryHookResult = ReturnType<typeof useListSsoIdentityProvidersByWorkspaceIdLazyQuery>;
+export type ListSsoIdentityProvidersByWorkspaceIdQueryResult = Apollo.QueryResult<ListSsoIdentityProvidersByWorkspaceIdQuery, ListSsoIdentityProvidersByWorkspaceIdQueryVariables>;
 export const DeleteUserAccountDocument = gql`
     mutation DeleteUserAccount {
   deleteUser {
@@ -2972,6 +4079,74 @@ export function useActivateWorkflowVersionMutation(baseOptions?: Apollo.Mutation
 export type ActivateWorkflowVersionMutationHookResult = ReturnType<typeof useActivateWorkflowVersionMutation>;
 export type ActivateWorkflowVersionMutationResult = Apollo.MutationResult<ActivateWorkflowVersionMutation>;
 export type ActivateWorkflowVersionMutationOptions = Apollo.BaseMutationOptions<ActivateWorkflowVersionMutation, ActivateWorkflowVersionMutationVariables>;
+export const ComputeStepOutputSchemaDocument = gql`
+    mutation ComputeStepOutputSchema($input: ComputeStepOutputSchemaInput!) {
+  computeStepOutputSchema(input: $input)
+}
+    `;
+export type ComputeStepOutputSchemaMutationFn = Apollo.MutationFunction<ComputeStepOutputSchemaMutation, ComputeStepOutputSchemaMutationVariables>;
+
+/**
+ * __useComputeStepOutputSchemaMutation__
+ *
+ * To run a mutation, you first call `useComputeStepOutputSchemaMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useComputeStepOutputSchemaMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [computeStepOutputSchemaMutation, { data, loading, error }] = useComputeStepOutputSchemaMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useComputeStepOutputSchemaMutation(baseOptions?: Apollo.MutationHookOptions<ComputeStepOutputSchemaMutation, ComputeStepOutputSchemaMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<ComputeStepOutputSchemaMutation, ComputeStepOutputSchemaMutationVariables>(ComputeStepOutputSchemaDocument, options);
+      }
+export type ComputeStepOutputSchemaMutationHookResult = ReturnType<typeof useComputeStepOutputSchemaMutation>;
+export type ComputeStepOutputSchemaMutationResult = Apollo.MutationResult<ComputeStepOutputSchemaMutation>;
+export type ComputeStepOutputSchemaMutationOptions = Apollo.BaseMutationOptions<ComputeStepOutputSchemaMutation, ComputeStepOutputSchemaMutationVariables>;
+export const CreateWorkflowVersionStepDocument = gql`
+    mutation CreateWorkflowVersionStep($input: CreateWorkflowVersionStepInput!) {
+  createWorkflowVersionStep(input: $input) {
+    id
+    name
+    type
+    settings
+    valid
+  }
+}
+    `;
+export type CreateWorkflowVersionStepMutationFn = Apollo.MutationFunction<CreateWorkflowVersionStepMutation, CreateWorkflowVersionStepMutationVariables>;
+
+/**
+ * __useCreateWorkflowVersionStepMutation__
+ *
+ * To run a mutation, you first call `useCreateWorkflowVersionStepMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateWorkflowVersionStepMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createWorkflowVersionStepMutation, { data, loading, error }] = useCreateWorkflowVersionStepMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useCreateWorkflowVersionStepMutation(baseOptions?: Apollo.MutationHookOptions<CreateWorkflowVersionStepMutation, CreateWorkflowVersionStepMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<CreateWorkflowVersionStepMutation, CreateWorkflowVersionStepMutationVariables>(CreateWorkflowVersionStepDocument, options);
+      }
+export type CreateWorkflowVersionStepMutationHookResult = ReturnType<typeof useCreateWorkflowVersionStepMutation>;
+export type CreateWorkflowVersionStepMutationResult = Apollo.MutationResult<CreateWorkflowVersionStepMutation>;
+export type CreateWorkflowVersionStepMutationOptions = Apollo.BaseMutationOptions<CreateWorkflowVersionStepMutation, CreateWorkflowVersionStepMutationVariables>;
 export const DeactivateWorkflowVersionDocument = gql`
     mutation DeactivateWorkflowVersion($workflowVersionId: String!) {
   deactivateWorkflowVersion(workflowVersionId: $workflowVersionId)
@@ -3003,6 +4178,144 @@ export function useDeactivateWorkflowVersionMutation(baseOptions?: Apollo.Mutati
 export type DeactivateWorkflowVersionMutationHookResult = ReturnType<typeof useDeactivateWorkflowVersionMutation>;
 export type DeactivateWorkflowVersionMutationResult = Apollo.MutationResult<DeactivateWorkflowVersionMutation>;
 export type DeactivateWorkflowVersionMutationOptions = Apollo.BaseMutationOptions<DeactivateWorkflowVersionMutation, DeactivateWorkflowVersionMutationVariables>;
+export const DeleteWorkflowVersionStepDocument = gql`
+    mutation DeleteWorkflowVersionStep($input: DeleteWorkflowVersionStepInput!) {
+  deleteWorkflowVersionStep(input: $input) {
+    id
+    name
+    type
+    settings
+    valid
+  }
+}
+    `;
+export type DeleteWorkflowVersionStepMutationFn = Apollo.MutationFunction<DeleteWorkflowVersionStepMutation, DeleteWorkflowVersionStepMutationVariables>;
+
+/**
+ * __useDeleteWorkflowVersionStepMutation__
+ *
+ * To run a mutation, you first call `useDeleteWorkflowVersionStepMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useDeleteWorkflowVersionStepMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [deleteWorkflowVersionStepMutation, { data, loading, error }] = useDeleteWorkflowVersionStepMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useDeleteWorkflowVersionStepMutation(baseOptions?: Apollo.MutationHookOptions<DeleteWorkflowVersionStepMutation, DeleteWorkflowVersionStepMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<DeleteWorkflowVersionStepMutation, DeleteWorkflowVersionStepMutationVariables>(DeleteWorkflowVersionStepDocument, options);
+      }
+export type DeleteWorkflowVersionStepMutationHookResult = ReturnType<typeof useDeleteWorkflowVersionStepMutation>;
+export type DeleteWorkflowVersionStepMutationResult = Apollo.MutationResult<DeleteWorkflowVersionStepMutation>;
+export type DeleteWorkflowVersionStepMutationOptions = Apollo.BaseMutationOptions<DeleteWorkflowVersionStepMutation, DeleteWorkflowVersionStepMutationVariables>;
+export const CreateDraftFromWorkflowVersionDocument = gql`
+    mutation CreateDraftFromWorkflowVersion($input: CreateDraftFromWorkflowVersionInput!) {
+  createDraftFromWorkflowVersion(input: $input)
+}
+    `;
+export type CreateDraftFromWorkflowVersionMutationFn = Apollo.MutationFunction<CreateDraftFromWorkflowVersionMutation, CreateDraftFromWorkflowVersionMutationVariables>;
+
+/**
+ * __useCreateDraftFromWorkflowVersionMutation__
+ *
+ * To run a mutation, you first call `useCreateDraftFromWorkflowVersionMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateDraftFromWorkflowVersionMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createDraftFromWorkflowVersionMutation, { data, loading, error }] = useCreateDraftFromWorkflowVersionMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useCreateDraftFromWorkflowVersionMutation(baseOptions?: Apollo.MutationHookOptions<CreateDraftFromWorkflowVersionMutation, CreateDraftFromWorkflowVersionMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<CreateDraftFromWorkflowVersionMutation, CreateDraftFromWorkflowVersionMutationVariables>(CreateDraftFromWorkflowVersionDocument, options);
+      }
+export type CreateDraftFromWorkflowVersionMutationHookResult = ReturnType<typeof useCreateDraftFromWorkflowVersionMutation>;
+export type CreateDraftFromWorkflowVersionMutationResult = Apollo.MutationResult<CreateDraftFromWorkflowVersionMutation>;
+export type CreateDraftFromWorkflowVersionMutationOptions = Apollo.BaseMutationOptions<CreateDraftFromWorkflowVersionMutation, CreateDraftFromWorkflowVersionMutationVariables>;
+export const RunWorkflowVersionDocument = gql`
+    mutation RunWorkflowVersion($input: RunWorkflowVersionInput!) {
+  runWorkflowVersion(input: $input) {
+    workflowRunId
+  }
+}
+    `;
+export type RunWorkflowVersionMutationFn = Apollo.MutationFunction<RunWorkflowVersionMutation, RunWorkflowVersionMutationVariables>;
+
+/**
+ * __useRunWorkflowVersionMutation__
+ *
+ * To run a mutation, you first call `useRunWorkflowVersionMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useRunWorkflowVersionMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [runWorkflowVersionMutation, { data, loading, error }] = useRunWorkflowVersionMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useRunWorkflowVersionMutation(baseOptions?: Apollo.MutationHookOptions<RunWorkflowVersionMutation, RunWorkflowVersionMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<RunWorkflowVersionMutation, RunWorkflowVersionMutationVariables>(RunWorkflowVersionDocument, options);
+      }
+export type RunWorkflowVersionMutationHookResult = ReturnType<typeof useRunWorkflowVersionMutation>;
+export type RunWorkflowVersionMutationResult = Apollo.MutationResult<RunWorkflowVersionMutation>;
+export type RunWorkflowVersionMutationOptions = Apollo.BaseMutationOptions<RunWorkflowVersionMutation, RunWorkflowVersionMutationVariables>;
+export const UpdateWorkflowVersionStepDocument = gql`
+    mutation UpdateWorkflowVersionStep($input: UpdateWorkflowVersionStepInput!) {
+  updateWorkflowVersionStep(input: $input) {
+    id
+    name
+    type
+    settings
+    valid
+  }
+}
+    `;
+export type UpdateWorkflowVersionStepMutationFn = Apollo.MutationFunction<UpdateWorkflowVersionStepMutation, UpdateWorkflowVersionStepMutationVariables>;
+
+/**
+ * __useUpdateWorkflowVersionStepMutation__
+ *
+ * To run a mutation, you first call `useUpdateWorkflowVersionStepMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateWorkflowVersionStepMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateWorkflowVersionStepMutation, { data, loading, error }] = useUpdateWorkflowVersionStepMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useUpdateWorkflowVersionStepMutation(baseOptions?: Apollo.MutationHookOptions<UpdateWorkflowVersionStepMutation, UpdateWorkflowVersionStepMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<UpdateWorkflowVersionStepMutation, UpdateWorkflowVersionStepMutationVariables>(UpdateWorkflowVersionStepDocument, options);
+      }
+export type UpdateWorkflowVersionStepMutationHookResult = ReturnType<typeof useUpdateWorkflowVersionStepMutation>;
+export type UpdateWorkflowVersionStepMutationResult = Apollo.MutationResult<UpdateWorkflowVersionStepMutation>;
+export type UpdateWorkflowVersionStepMutationOptions = Apollo.BaseMutationOptions<UpdateWorkflowVersionStepMutation, UpdateWorkflowVersionStepMutationVariables>;
 export const DeleteWorkspaceInvitationDocument = gql`
     mutation DeleteWorkspaceInvitation($appTokenId: String!) {
   deleteWorkspaceInvitation(appTokenId: $appTokenId)
@@ -3222,6 +4535,7 @@ export const ActivateWorkspaceDocument = gql`
     mutation ActivateWorkspace($input: ActivateWorkspaceInput!) {
   activateWorkspace(data: $input) {
     id
+    subdomain
   }
 }
     `;
@@ -3288,9 +4602,14 @@ export const UpdateWorkspaceDocument = gql`
   updateWorkspace(data: $input) {
     id
     domainName
+    subdomain
     displayName
     logo
     allowImpersonation
+    isPublicInviteLinkEnabled
+    isGoogleAuthEnabled
+    isMicrosoftAuthEnabled
+    isPasswordAuthEnabled
   }
 }
     `;

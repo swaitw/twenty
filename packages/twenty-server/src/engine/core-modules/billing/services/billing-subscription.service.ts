@@ -3,81 +3,34 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import assert from 'assert';
 
-import { User } from '@sentry/node';
 import Stripe from 'stripe';
-import { In, Not, Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 
-import { AvailableProduct } from 'src/engine/core-modules/billing/interfaces/available-product.interface';
-
-import {
-  BillingSubscription,
-  SubscriptionInterval,
-  SubscriptionStatus,
-} from 'src/engine/core-modules/billing/entities/billing-subscription.entity';
-import { StripeService } from 'src/engine/core-modules/billing/stripe/stripe.service';
-import { FeatureFlagKey } from 'src/engine/core-modules/feature-flag/enums/feature-flag-key.enum';
-import { FeatureFlagEntity } from 'src/engine/core-modules/feature-flag/feature-flag.entity';
-import { Workspace } from 'src/engine/core-modules/workspace/workspace.entity';
+import { BillingEntitlement } from 'src/engine/core-modules/billing/entities/billing-entitlement.entity';
+import { BillingSubscription } from 'src/engine/core-modules/billing/entities/billing-subscription.entity';
+import { AvailableProduct } from 'src/engine/core-modules/billing/enums/billing-available-product.enum';
+import { BillingEntitlementKey } from 'src/engine/core-modules/billing/enums/billing-entitlement-key.enum';
+import { SubscriptionInterval } from 'src/engine/core-modules/billing/enums/billing-subscription-interval.enum';
+import { SubscriptionStatus } from 'src/engine/core-modules/billing/enums/billing-subscription-status.enum';
+import { StripePriceService } from 'src/engine/core-modules/billing/stripe/services/stripe-price.service';
+import { StripeSubscriptionItemService } from 'src/engine/core-modules/billing/stripe/services/stripe-subscription-item.service';
+import { StripeSubscriptionService } from 'src/engine/core-modules/billing/stripe/services/stripe-subscription.service';
 import { EnvironmentService } from 'src/engine/core-modules/environment/environment.service';
+import { Workspace } from 'src/engine/core-modules/workspace/workspace.entity';
 
 @Injectable()
 export class BillingSubscriptionService {
   protected readonly logger = new Logger(BillingSubscriptionService.name);
   constructor(
-    private readonly stripeService: StripeService,
+    private readonly stripeSubscriptionService: StripeSubscriptionService,
+    private readonly stripePriceService: StripePriceService,
+    private readonly stripeSubscriptionItemService: StripeSubscriptionItemService,
     private readonly environmentService: EnvironmentService,
+    @InjectRepository(BillingEntitlement, 'core')
+    private readonly billingEntitlementRepository: Repository<BillingEntitlement>,
     @InjectRepository(BillingSubscription, 'core')
     private readonly billingSubscriptionRepository: Repository<BillingSubscription>,
-    @InjectRepository(FeatureFlagEntity, 'core')
-    private readonly featureFlagRepository: Repository<FeatureFlagEntity>,
-    @InjectRepository(Workspace, 'core')
-    private readonly workspaceRepository: Repository<Workspace>,
   ) {}
-
-  /**
-   * @deprecated This is fully deprecated, it's only used in the migration script for 0.23
-   */
-  async getActiveSubscriptionWorkspaceIds() {
-    if (!this.environmentService.get('IS_BILLING_ENABLED')) {
-      return (await this.workspaceRepository.find({ select: ['id'] })).map(
-        (workspace) => workspace.id,
-      );
-    }
-
-    const activeSubscriptions = await this.billingSubscriptionRepository.find({
-      where: {
-        status: In([
-          SubscriptionStatus.Active,
-          SubscriptionStatus.Trialing,
-          SubscriptionStatus.PastDue,
-        ]),
-      },
-      select: ['workspaceId'],
-    });
-
-    const freeAccessFeatureFlags = await this.featureFlagRepository.find({
-      where: {
-        key: FeatureFlagKey.IsFreeAccessEnabled,
-        value: true,
-      },
-      select: ['workspaceId'],
-    });
-
-    const activeWorkspaceIdsBasedOnSubscriptions = activeSubscriptions.map(
-      (subscription) => subscription.workspaceId,
-    );
-
-    const activeWorkspaceIdsBasedOnFeatureFlags = freeAccessFeatureFlags.map(
-      (featureFlag) => featureFlag.workspaceId,
-    );
-
-    return Array.from(
-      new Set([
-        ...activeWorkspaceIdsBasedOnSubscriptions,
-        ...activeWorkspaceIdsBasedOnFeatureFlags,
-      ]),
-    );
-  }
 
   async getCurrentBillingSubscriptionOrThrow(criteria: {
     workspaceId?: string;
@@ -129,7 +82,7 @@ export class BillingSubscriptionService {
       });
 
     if (subscriptionToCancel) {
-      await this.stripeService.cancelSubscription(
+      await this.stripeSubscriptionService.cancelSubscription(
         subscriptionToCancel.stripeSubscriptionId,
       );
       await this.billingSubscriptionRepository.delete(subscriptionToCancel.id);
@@ -142,15 +95,37 @@ export class BillingSubscriptionService {
     );
 
     if (billingSubscription?.status === 'unpaid') {
-      await this.stripeService.collectLastInvoice(
+      await this.stripeSubscriptionService.collectLastInvoice(
         billingSubscription.stripeSubscriptionId,
       );
     }
+
+    return {
+      handleUnpaidInvoiceStripeSubscriptionId:
+        billingSubscription.stripeSubscriptionId,
+    };
   }
 
-  async applyBillingSubscription(user: User) {
+  async getWorkspaceEntitlementByKey(
+    workspaceId: string,
+    key: BillingEntitlementKey,
+  ) {
+    const entitlement = await this.billingEntitlementRepository.findOneBy({
+      workspaceId,
+      key,
+      value: true,
+    });
+
+    if (!entitlement) {
+      return false;
+    }
+
+    return entitlement.value;
+  }
+
+  async applyBillingSubscription(workspace: Workspace) {
     const billingSubscription = await this.getCurrentBillingSubscriptionOrThrow(
-      { workspaceId: user.defaultWorkspaceId },
+      { workspaceId: workspace.id },
     );
 
     const newInterval =
@@ -159,11 +134,9 @@ export class BillingSubscriptionService {
         : SubscriptionInterval.Year;
 
     const billingSubscriptionItem =
-      await this.getCurrentBillingSubscriptionItemOrThrow(
-        user.defaultWorkspaceId,
-      );
+      await this.getCurrentBillingSubscriptionItemOrThrow(workspace.id);
 
-    const productPrice = await this.stripeService.getStripePrice(
+    const productPrice = await this.stripePriceService.getStripePrice(
       AvailableProduct.BasePlan,
       newInterval,
     );
@@ -174,7 +147,7 @@ export class BillingSubscriptionService {
       );
     }
 
-    await this.stripeService.updateBillingSubscriptionItem(
+    await this.stripeSubscriptionItemService.updateBillingSubscriptionItem(
       billingSubscriptionItem,
       productPrice.stripePriceId,
     );

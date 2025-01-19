@@ -1,5 +1,5 @@
 import { useRecoilValue } from 'recoil';
-import { H2Title } from 'twenty-ui';
+import { H2Title, Section } from 'twenty-ui';
 
 import { ConnectedAccount } from '@/accounts/types/ConnectedAccount';
 import { currentWorkspaceMemberState } from '@/auth/states/currentWorkspaceMemberState';
@@ -12,12 +12,13 @@ import { SettingsAccountsBlocklistSection } from '@/settings/accounts/components
 import { SettingsAccountsConnectedAccountsListCard } from '@/settings/accounts/components/SettingsAccountsConnectedAccountsListCard';
 import { SettingsAccountsSettingsSection } from '@/settings/accounts/components/SettingsAccountsSettingsSection';
 import { SettingsPageContainer } from '@/settings/components/SettingsPageContainer';
-import { getSettingsPagePath } from '@/settings/utils/getSettingsPagePath';
 import { SettingsPath } from '@/types/SettingsPath';
-import { SubMenuTopBarContainer } from '@/ui/layout/page/SubMenuTopBarContainer';
-import { Section } from '@/ui/layout/section/components/Section';
+import { SubMenuTopBarContainer } from '@/ui/layout/page/components/SubMenuTopBarContainer';
+import { useLingui } from '@lingui/react/macro';
+import { getSettingsPath } from '~/utils/navigation/getSettingsPath';
 
 export const SettingsAccounts = () => {
+  const { t } = useLingui();
   const currentWorkspaceMember = useRecoilValue(currentWorkspaceMemberState);
 
   const { objectMetadataItem } = useObjectMetadataItem({
@@ -25,7 +26,7 @@ export const SettingsAccounts = () => {
   });
 
   const { records: accounts, loading } = useFindManyRecords<ConnectedAccount>({
-    objectNameSingular: 'connectedAccount',
+    objectNameSingular: CoreObjectNameSingular.ConnectedAccount,
     filter: {
       accountOwnerId: {
         eq: currentWorkspaceMember?.id,
@@ -36,13 +37,13 @@ export const SettingsAccounts = () => {
 
   return (
     <SubMenuTopBarContainer
-      title="Account"
+      title={t`Account`}
       links={[
         {
-          children: 'User',
-          href: getSettingsPagePath(SettingsPath.ProfilePage),
+          children: t`User`,
+          href: getSettingsPath(SettingsPath.ProfilePage),
         },
-        { children: 'Account' },
+        { children: t`Account` },
       ]}
     >
       <SettingsPageContainer>
@@ -52,8 +53,8 @@ export const SettingsAccounts = () => {
           <>
             <Section>
               <H2Title
-                title="Connected accounts"
-                description="Manage your internet accounts."
+                title={t`Connected accounts`}
+                description={t`Manage your internet accounts.`}
               />
               <SettingsAccountsConnectedAccountsListCard
                 accounts={accounts}

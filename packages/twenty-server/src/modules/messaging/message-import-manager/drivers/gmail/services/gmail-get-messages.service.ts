@@ -77,14 +77,12 @@ export class GmailGetMessagesService {
 
     const messages = parsedResponses.map((response, index) => {
       if ('error' in response) {
-        if (response.error.code === 404) {
-          return null;
-        }
-
-        this.gmailHandleErrorService.handleError(
+        this.gmailHandleErrorService.handleGmailMessagesImportError(
           response.error,
           messageIds[index],
         );
+
+        return undefined;
       }
 
       return parseAndFormatGmailMessage(

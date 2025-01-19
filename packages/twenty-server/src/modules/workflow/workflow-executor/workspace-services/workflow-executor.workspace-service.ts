@@ -1,11 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import {
   WorkflowRunOutput,
   WorkflowRunStatus,
 } from 'src/modules/workflow/common/standard-objects/workflow-run.workspace-entity';
 import { WorkflowActionFactory } from 'src/modules/workflow/workflow-executor/factories/workflow-action.factory';
-import { WorkflowStep } from 'src/modules/workflow/workflow-executor/types/workflow-action.type';
+import { resolveInput } from 'src/modules/workflow/workflow-executor/utils/variable-resolver.util';
+import { WorkflowActionResult } from 'src/modules/workflow/workflow-executor/workflow-actions/types/workflow-action-result.type';
+import { WorkflowAction } from 'src/modules/workflow/workflow-executor/workflow-actions/types/workflow-action.type';
 
 const MAX_RETRIES_ON_FAILURE = 3;
 
@@ -16,19 +18,20 @@ export type WorkflowExecutorOutput = {
 
 @Injectable()
 export class WorkflowExecutorWorkspaceService {
+  private readonly logger = new Logger(WorkflowExecutorWorkspaceService.name);
   constructor(private readonly workflowActionFactory: WorkflowActionFactory) {}
 
   async execute({
     currentStepIndex,
     steps,
-    payload,
+    context,
     output,
     attemptCount = 1,
   }: {
     currentStepIndex: number;
-    steps: WorkflowStep[];
+    steps: WorkflowAction[];
     output: WorkflowExecutorOutput;
-    payload?: object;
+    context: Record<string, unknown>;
     attemptCount?: number;
   }): Promise<WorkflowExecutorOutput> {
     if (currentStepIndex >= steps.length) {
@@ -39,59 +42,67 @@ export class WorkflowExecutorWorkspaceService {
 
     const workflowAction = this.workflowActionFactory.get(step.type);
 
-    const result = await workflowAction.execute({
-      step,
-      payload,
-    });
+    const actionPayload = resolveInput(step.settings.input, context);
 
-    const baseStepOutput = {
+    let result: WorkflowActionResult;
+
+    try {
+      result = await workflowAction.execute(actionPayload);
+    } catch (error) {
+      result = {
+        error: {
+          errorType: error.name,
+          errorMessage: error.message,
+          stackTrace: error.stack,
+        },
+      };
+    }
+
+    const stepOutput = output.steps[step.id];
+
+    const error =
+      result.error?.errorMessage ??
+      (result.result ? undefined : 'Execution result error, no data or error');
+
+    const updatedStepOutput = {
       id: step.id,
       name: step.name,
       type: step.type,
-      attemptCount,
+      outputs: [
+        ...(stepOutput?.outputs ?? []),
+        {
+          attemptCount,
+          result: result.result,
+          error,
+        },
+      ],
     };
 
     const updatedOutput = {
       ...output,
-      steps: [
+      steps: {
         ...output.steps,
-        {
-          ...baseStepOutput,
-          result: result.result,
-          error: result.error?.errorMessage,
-        },
-      ],
+        [step.id]: updatedStepOutput,
+      },
     };
 
     if (result.result) {
       return await this.execute({
         currentStepIndex: currentStepIndex + 1,
         steps,
-        payload: result.result,
+        context: {
+          ...context,
+          [step.id]: result.result,
+        },
         output: updatedOutput,
       });
-    }
-
-    if (!result.error) {
-      return {
-        ...output,
-        steps: [
-          ...output.steps,
-          {
-            ...baseStepOutput,
-            result: undefined,
-            error: 'Execution result error, no data or error',
-          },
-        ],
-        status: WorkflowRunStatus.FAILED,
-      };
     }
 
     if (step.settings.errorHandlingOptions.continueOnFailure.value) {
       return await this.execute({
         currentStepIndex: currentStepIndex + 1,
         steps,
-        payload,
+        context,
         output: updatedOutput,
       });
     }
@@ -103,7 +114,7 @@ export class WorkflowExecutorWorkspaceService {
       return await this.execute({
         currentStepIndex,
         steps,
-        payload,
+        context,
         output: updatedOutput,
         attemptCount: attemptCount + 1,
       });

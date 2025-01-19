@@ -1,32 +1,42 @@
 import { useFindManyRecords } from '@/object-record/hooks/useFindManyRecords';
-import { RecordTableContext } from '@/object-record/record-table/contexts/RecordTableContext';
-import { RecordTableEmptyStateNoRecordAtAll } from '@/object-record/record-table/empty-state/components/RecordTableEmptyStateNoRecordAtAll';
+import { hasRecordGroupsComponentSelector } from '@/object-record/record-group/states/selectors/hasRecordGroupsComponentSelector';
+import { useRecordTableContextOrThrow } from '@/object-record/record-table/contexts/RecordTableContext';
+import { RecordTableEmptyStateByGroupNoRecordAtAll } from '@/object-record/record-table/empty-state/components/RecordTableEmptyStateByGroupNoRecordAtAll';
+import { RecordTableEmptyStateNoGroupNoRecordAtAll } from '@/object-record/record-table/empty-state/components/RecordTableEmptyStateNoGroupNoRecordAtAll';
 import { RecordTableEmptyStateNoRecordFoundForFilter } from '@/object-record/record-table/empty-state/components/RecordTableEmptyStateNoRecordFoundForFilter';
 import { RecordTableEmptyStateRemote } from '@/object-record/record-table/empty-state/components/RecordTableEmptyStateRemote';
 import { RecordTableEmptyStateSoftDelete } from '@/object-record/record-table/empty-state/components/RecordTableEmptyStateSoftDelete';
-import { useRecordTableStates } from '@/object-record/record-table/hooks/internal/useRecordTableStates';
-import { useContext } from 'react';
-import { useRecoilValue } from 'recoil';
+import { isSoftDeleteFilterActiveComponentState } from '@/object-record/record-table/states/isSoftDeleteFilterActiveComponentState';
+import { useRecoilComponentValueV2 } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValueV2';
 
 export const RecordTableEmptyState = () => {
-  const { objectNameSingular, recordTableId, objectMetadataItem } =
-    useContext(RecordTableContext);
+  const { recordTableId, objectNameSingular, objectMetadataItem } =
+    useRecordTableContextOrThrow();
 
-  const { isSoftDeleteActiveState } = useRecordTableStates(recordTableId);
+  const hasRecordGroups = useRecoilComponentValueV2(
+    hasRecordGroupsComponentSelector,
+  );
 
   const { totalCount } = useFindManyRecords({ objectNameSingular, limit: 1 });
   const noRecordAtAll = totalCount === 0;
 
   const isRemote = objectMetadataItem.isRemote;
 
-  const isSoftDeleteActive = useRecoilValue(isSoftDeleteActiveState);
+  const isSoftDeleteActive = useRecoilComponentValueV2(
+    isSoftDeleteFilterActiveComponentState,
+    recordTableId,
+  );
 
   if (isRemote) {
     return <RecordTableEmptyStateRemote />;
   } else if (isSoftDeleteActive === true) {
     return <RecordTableEmptyStateSoftDelete />;
   } else if (noRecordAtAll) {
-    return <RecordTableEmptyStateNoRecordAtAll />;
+    if (hasRecordGroups) {
+      return <RecordTableEmptyStateByGroupNoRecordAtAll />;
+    }
+
+    return <RecordTableEmptyStateNoGroupNoRecordAtAll />;
   } else {
     return <RecordTableEmptyStateNoRecordFoundForFilter />;
   }

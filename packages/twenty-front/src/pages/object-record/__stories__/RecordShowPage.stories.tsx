@@ -40,21 +40,6 @@ const meta: Meta<PageDecoratorArgs> = {
             },
           });
         }),
-        graphql.query('FindManyActivityTargets', () => {
-          return HttpResponse.json({
-            data: {
-              activityTargets: {
-                edges: [],
-                pageInfo: {
-                  hasNextPage: false,
-                  startCursor: '',
-                  endCursor: '',
-                },
-                totalCount: 0,
-              },
-            },
-          });
-        }),
         graphql.query('FindOneworkspaceMember', () => {
           return HttpResponse.json({
             data: {
@@ -86,8 +71,8 @@ export const Default: Story = {
       }),
     ).toBeInTheDocument();
     expect(
-      await canvas.findByText('Add your first Activity', undefined, {
-        timeout: 3000,
+      await canvas.findByText('No activity yet', undefined, {
+        timeout: 5000,
       }),
     ).toBeInTheDocument();
   },

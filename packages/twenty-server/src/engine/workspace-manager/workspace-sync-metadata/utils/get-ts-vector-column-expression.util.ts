@@ -1,5 +1,6 @@
+import { FieldMetadataType } from 'twenty-shared';
+
 import { compositeTypeDefinitions } from 'src/engine/metadata-modules/field-metadata/composite-types';
-import { FieldMetadataType } from 'src/engine/metadata-modules/field-metadata/field-metadata.entity';
 import {
   computeColumnName,
   computeCompositeColumnName,
@@ -9,15 +10,27 @@ import {
   WorkspaceMigrationException,
   WorkspaceMigrationExceptionCode,
 } from 'src/engine/metadata-modules/workspace-migration/workspace-migration.exception';
+import {
+  isSearchableFieldType,
+  SearchableFieldType,
+} from 'src/engine/workspace-manager/workspace-sync-metadata/utils/is-searchable-field.util';
 
-type FieldTypeAndNameMetadata = {
+export type FieldTypeAndNameMetadata = {
   name: string;
-  type: FieldMetadataType;
+  type: SearchableFieldType;
 };
 
 export const getTsVectorColumnExpressionFromFields = (
   fieldsUsedForSearch: FieldTypeAndNameMetadata[],
 ): string => {
+  const filteredFieldsUsedForSearch = fieldsUsedForSearch.filter((field) =>
+    isSearchableFieldType(field.type),
+  );
+
+  if (filteredFieldsUsedForSearch.length < 1) {
+    throw new Error('No searchable fields found');
+  }
+
   const columnExpressions = fieldsUsedForSearch.flatMap(
     getColumnExpressionsFromField,
   );
@@ -63,8 +76,9 @@ const getColumnExpression = (
 ): string => {
   const quotedColumnName = `"${columnName}"`;
 
-  if (fieldType === FieldMetadataType.EMAILS) {
-    return `
+  switch (fieldType) {
+    case FieldMetadataType.EMAILS:
+      return `
       COALESCE(
         replace(
           ${quotedColumnName},
@@ -74,7 +88,7 @@ const getColumnExpression = (
         ''
       )
     `;
-  } else {
-    return `COALESCE(${quotedColumnName}, '')`;
+    default:
+      return `COALESCE(${quotedColumnName}, '')`;
   }
 };

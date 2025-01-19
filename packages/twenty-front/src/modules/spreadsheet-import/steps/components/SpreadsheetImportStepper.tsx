@@ -3,10 +3,10 @@ import styled from '@emotion/styled';
 import { useCallback, useState } from 'react';
 
 import { useSpreadsheetImportInternal } from '@/spreadsheet-import/hooks/useSpreadsheetImportInternal';
-import { CircularProgressBar } from '@/ui/feedback/progress-bar/components/CircularProgressBar';
 import { SnackBarVariant } from '@/ui/feedback/snack-bar-manager/components/SnackBar';
 import { useSnackBar } from '@/ui/feedback/snack-bar-manager/hooks/useSnackBar';
 import { Modal } from '@/ui/layout/modal/components/Modal';
+import { CircularProgressBar } from 'twenty-ui';
 
 import { SpreadsheetImportStep } from '@/spreadsheet-import/steps/types/SpreadsheetImportStep';
 import { SpreadsheetImportStepType } from '@/spreadsheet-import/steps/types/SpreadsheetImportStepType';
@@ -51,7 +51,6 @@ export const SpreadsheetImportStepper = ({
   const handleError = useCallback(
     (description: string) => {
       enqueueSnackBar(description, {
-        title: 'Error',
         variant: SnackBarVariant.Error,
       });
     },

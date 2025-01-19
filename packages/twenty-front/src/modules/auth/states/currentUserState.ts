@@ -1,4 +1,4 @@
-import { createState } from 'twenty-ui';
+import { createState } from '@ui/utilities/state/utils/createState';
 
 import { User } from '~/generated/graphql';
 
@@ -7,6 +7,7 @@ export type CurrentUser = Pick<
   | 'id'
   | 'email'
   | 'supportUserHash'
+  | 'analyticsTinybirdJwts'
   | 'canImpersonate'
   | 'onboardingStatus'
   | 'userVars'

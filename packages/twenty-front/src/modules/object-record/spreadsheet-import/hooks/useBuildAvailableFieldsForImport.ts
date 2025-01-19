@@ -4,7 +4,7 @@ import { FieldMetadataItem } from '@/object-metadata/types/FieldMetadataItem';
 
 import { COMPOSITE_FIELD_IMPORT_LABELS } from '@/object-record/spreadsheet-import/constants/CompositeFieldImportLabels';
 import { AvailableFieldForImport } from '@/object-record/spreadsheet-import/types/AvailableFieldForImport';
-import { getSpreadSheetFieldValidationDefinitions } from '@/object-record/spreadsheet-import/util/getSpreadSheetFieldValidationDefinitions';
+import { getSpreadSheetFieldValidationDefinitions } from '@/object-record/spreadsheet-import/utils/getSpreadSheetFieldValidationDefinitions';
 import { FieldMetadataType } from '~/generated-metadata/graphql';
 
 export const useBuildAvailableFieldsForImport = () => {
@@ -131,6 +131,25 @@ export const useBuildAvailableFieldsForImport = () => {
           key: fieldMetadataItem.name,
           fieldType: {
             type: 'select',
+            options:
+              fieldMetadataItem.options?.map((option) => ({
+                label: option.label,
+                value: option.value,
+                color: option.color,
+              })) || [],
+          },
+          fieldValidationDefinitions: getSpreadSheetFieldValidationDefinitions(
+            fieldMetadataItem.type,
+            fieldMetadataItem.label + ' (ID)',
+          ),
+        });
+      } else if (fieldMetadataItem.type === FieldMetadataType.MultiSelect) {
+        availableFieldsForImport.push({
+          icon: getIcon(fieldMetadataItem.icon),
+          label: fieldMetadataItem.label,
+          key: fieldMetadataItem.name,
+          fieldType: {
+            type: 'multiSelect',
             options:
               fieldMetadataItem.options?.map((option) => ({
                 label: option.label,

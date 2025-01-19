@@ -1,6 +1,5 @@
 import { useDeleteOneRelationMetadataItem } from '@/object-metadata/hooks/useDeleteOneRelationMetadataItem';
-import { FieldMetadataType } from '~/generated-metadata/graphql';
-import { Field } from '~/generated/graphql';
+import { Field, FieldMetadataType } from '~/generated-metadata/graphql';
 
 import { FieldMetadataItem } from '../types/FieldMetadataItem';
 import { formatFieldMetadataItemInput } from '../utils/formatFieldMetadataItemInput';
@@ -18,6 +17,7 @@ export const useFieldMetadataItem = () => {
   const createMetadataField = (
     input: Pick<
       Field,
+      | 'name'
       | 'label'
       | 'icon'
       | 'description'
@@ -25,6 +25,7 @@ export const useFieldMetadataItem = () => {
       | 'type'
       | 'options'
       | 'settings'
+      | 'isLabelSyncedWithName'
     > & {
       objectMetadataId: string;
     },
@@ -37,18 +38,27 @@ export const useFieldMetadataItem = () => {
       type: input.type,
       label: formattedInput.label ?? '',
       name: formattedInput.name ?? '',
+      isLabelSyncedWithName: formattedInput.isLabelSyncedWithName ?? true,
     });
   };
 
-  const activateMetadataField = (metadataField: FieldMetadataItem) =>
+  const activateMetadataField = (
+    fieldMetadataId: string,
+    objectMetadataId: string,
+  ) =>
     updateOneFieldMetadataItem({
-      fieldMetadataIdToUpdate: metadataField.id,
+      objectMetadataId: objectMetadataId,
+      fieldMetadataIdToUpdate: fieldMetadataId,
       updatePayload: { isActive: true },
     });
 
-  const deactivateMetadataField = (metadataField: FieldMetadataItem) =>
+  const deactivateMetadataField = (
+    fieldMetadataId: string,
+    objectMetadataId: string,
+  ) =>
     updateOneFieldMetadataItem({
-      fieldMetadataIdToUpdate: metadataField.id,
+      objectMetadataId: objectMetadataId,
+      fieldMetadataIdToUpdate: fieldMetadataId,
       updatePayload: { isActive: false },
     });
 

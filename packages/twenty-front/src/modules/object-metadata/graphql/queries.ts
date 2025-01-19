@@ -24,6 +24,8 @@ export const FIND_MANY_OBJECT_METADATA_ITEMS = gql`
           updatedAt
           labelIdentifierFieldMetadataId
           imageIdentifierFieldMetadataId
+          shortcut
+          isLabelSyncedWithName
           indexMetadatas(paging: { first: 100 }) {
             edges {
               node {
@@ -67,6 +69,7 @@ export const FIND_MANY_OBJECT_METADATA_ITEMS = gql`
                 defaultValue
                 options
                 settings
+                isLabelSyncedWithName
                 relationDefinition {
                   relationId
                   direction

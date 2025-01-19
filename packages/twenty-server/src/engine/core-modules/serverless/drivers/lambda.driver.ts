@@ -54,6 +54,8 @@ import { compileTypescript } from 'src/engine/core-modules/serverless/drivers/ut
 import { ENV_FILE_NAME } from 'src/engine/core-modules/serverless/drivers/constants/env-file-name';
 import { OUTDIR_FOLDER } from 'src/engine/core-modules/serverless/drivers/constants/outdir-folder';
 
+const UPDATE_FUNCTION_DURATION_TIMEOUT_IN_SECONDS = 30;
+
 export interface LambdaDriverOptions extends LambdaClientConfig {
   fileStorageService: FileStorageService;
   region: string;
@@ -75,7 +77,7 @@ export class LambdaDriver implements ServerlessDriver {
 
   private async waitFunctionUpdates(
     serverlessFunctionId: string,
-    maxWaitTime: number,
+    maxWaitTime: number = UPDATE_FUNCTION_DURATION_TIMEOUT_IN_SECONDS,
   ) {
     const waitParams = { FunctionName: serverlessFunctionId };
 
@@ -227,7 +229,7 @@ export class LambdaDriver implements ServerlessDriver {
           ZipFile: await fs.readFile(lambdaZipPath),
         },
         FunctionName: serverlessFunction.id,
-        Handler: 'src/index.handler',
+        Handler: 'src/index.main',
         Layers: [layerArn],
         Environment: {
           Variables: envVariables,
@@ -235,7 +237,7 @@ export class LambdaDriver implements ServerlessDriver {
         Role: this.lambdaRole,
         Runtime: serverlessFunction.runtime,
         Description: 'Lambda function to run user script',
-        Timeout: 900,
+        Timeout: serverlessFunction.timeoutSeconds,
       };
 
       const command = new CreateFunctionCommand(params);
@@ -257,18 +259,19 @@ export class LambdaDriver implements ServerlessDriver {
             Variables: envVariables,
           },
           FunctionName: serverlessFunction.id,
+          Timeout: serverlessFunction.timeoutSeconds,
         };
 
       const updateConfigurationCommand = new UpdateFunctionConfigurationCommand(
         updateConfigurationParams,
       );
 
-      await this.waitFunctionUpdates(serverlessFunction.id, 10);
+      await this.waitFunctionUpdates(serverlessFunction.id);
 
       await this.lambdaClient.send(updateConfigurationCommand);
     }
 
-    await this.waitFunctionUpdates(serverlessFunction.id, 10);
+    await this.waitFunctionUpdates(serverlessFunction.id);
   }
 
   async publish(serverlessFunction: ServerlessFunctionEntity) {
@@ -316,9 +319,12 @@ export class LambdaDriver implements ServerlessDriver {
         ? functionToExecute.id
         : `${functionToExecute.id}:${computedVersion}`;
 
-    await this.waitFunctionUpdates(functionToExecute.id, 10);
+    if (version === 'draft') {
+      await this.waitFunctionUpdates(functionToExecute.id);
+    }
 
     const startTime = Date.now();
+
     const params: InvokeCommandInput = {
       FunctionName: functionName,
       Payload: JSON.stringify(payload),

@@ -1,7 +1,7 @@
 import {
   ChipGeneratorPerObjectNameSingularPerFieldName,
   IdentifierChipGeneratorPerObject,
-} from '@/object-metadata/context/PreComputedChipGeneratorsContext';
+} from '@/object-metadata/contexts/PreComputedChipGeneratorsContext';
 import { ObjectMetadataItem } from '@/object-metadata/types/ObjectMetadataItem';
 import { getAvatarType } from '@/object-metadata/utils/getAvatarType';
 import { getAvatarUrl } from '@/object-metadata/utils/getAvatarUrl';
@@ -47,13 +47,13 @@ export const getRecordChipGenerators = (
             labelIdentifierFieldMetadataItem?.id === fieldMetadataItem.id;
 
           const currentObjectNameSingular = objectMetadataItem.nameSingular;
-          const fieldRelationObjectNameSingular =
+          const fieldObjectNameSingular =
             fieldMetadataItem.relationDefinition?.targetObjectMetadata
               .nameSingular ?? undefined;
 
           const objectNameSingularToFind = isLabelIdentifier
             ? currentObjectNameSingular
-            : fieldRelationObjectNameSingular;
+            : fieldObjectNameSingular;
 
           const objectMetadataItemToUse = objectMetadataItems.find(
             (objectMetadataItem) =>

@@ -1,6 +1,8 @@
+import { FieldMetadataType } from 'twenty-shared';
+
 import { Relation } from 'src/engine/workspace-manager/workspace-sync-metadata/interfaces/relation.interface';
 
-import { FieldMetadataType } from 'src/engine/metadata-modules/field-metadata/field-metadata.entity';
+import { AGGREGATE_OPERATIONS } from 'src/engine/api/graphql/graphql-query-runner/constants/aggregate-operations.constant';
 import {
   RelationMetadataType,
   RelationOnDeleteAction,
@@ -13,10 +15,13 @@ import { WorkspaceIsNullable } from 'src/engine/twenty-orm/decorators/workspace-
 import { WorkspaceIsSystem } from 'src/engine/twenty-orm/decorators/workspace-is-system.decorator';
 import { WorkspaceRelation } from 'src/engine/twenty-orm/decorators/workspace-relation.decorator';
 import { VIEW_STANDARD_FIELD_IDS } from 'src/engine/workspace-manager/workspace-sync-metadata/constants/standard-field-ids';
+import { STANDARD_OBJECT_ICONS } from 'src/engine/workspace-manager/workspace-sync-metadata/constants/standard-object-icons';
 import { STANDARD_OBJECT_IDS } from 'src/engine/workspace-manager/workspace-sync-metadata/constants/standard-object-ids';
 import { FavoriteWorkspaceEntity } from 'src/modules/favorite/standard-objects/favorite.workspace-entity';
 import { ViewFieldWorkspaceEntity } from 'src/modules/view/standard-objects/view-field.workspace-entity';
+import { ViewFilterGroupWorkspaceEntity } from 'src/modules/view/standard-objects/view-filter-group.workspace-entity';
 import { ViewFilterWorkspaceEntity } from 'src/modules/view/standard-objects/view-filter.workspace-entity';
+import { ViewGroupWorkspaceEntity } from 'src/modules/view/standard-objects/view-group.workspace-entity';
 import { ViewSortWorkspaceEntity } from 'src/modules/view/standard-objects/view-sort.workspace-entity';
 
 @WorkspaceEntity({
@@ -25,7 +30,7 @@ import { ViewSortWorkspaceEntity } from 'src/modules/view/standard-objects/view-
   labelSingular: 'View',
   labelPlural: 'Views',
   description: '(System) Views',
-  icon: 'IconLayoutCollage',
+  icon: STANDARD_OBJECT_ICONS.view,
   labelIdentifierStandardId: VIEW_STANDARD_FIELD_IDS.name,
 })
 @WorkspaceIsNotAuditLogged()
@@ -81,6 +86,9 @@ export class ViewWorkspaceEntity extends BaseWorkspaceEntity {
     label: 'kanbanfieldMetadataId',
     description: 'View Kanban column field',
   })
+  /**
+   * @deprecated Use `viewGroups.fieldMetadataId` instead
+   */
   kanbanFieldMetadataId: string;
 
   @WorkspaceField({
@@ -88,8 +96,9 @@ export class ViewWorkspaceEntity extends BaseWorkspaceEntity {
     type: FieldMetadataType.POSITION,
     label: 'Position',
     description: 'View position',
+    defaultValue: 0,
   })
-  @WorkspaceIsNullable()
+  @WorkspaceIsSystem()
   position: number;
 
   @WorkspaceField({
@@ -108,10 +117,22 @@ export class ViewWorkspaceEntity extends BaseWorkspaceEntity {
     description: 'View Fields',
     icon: 'IconTag',
     inverseSideTarget: () => ViewFieldWorkspaceEntity,
-    onDelete: RelationOnDeleteAction.SET_NULL,
+    onDelete: RelationOnDeleteAction.CASCADE,
   })
   @WorkspaceIsNullable()
   viewFields: Relation<ViewFieldWorkspaceEntity[]>;
+
+  @WorkspaceRelation({
+    standardId: VIEW_STANDARD_FIELD_IDS.viewGroups,
+    type: RelationMetadataType.ONE_TO_MANY,
+    label: 'View Groups',
+    description: 'View Groups',
+    icon: 'IconTag',
+    inverseSideTarget: () => ViewGroupWorkspaceEntity,
+    onDelete: RelationOnDeleteAction.SET_NULL,
+  })
+  @WorkspaceIsNullable()
+  viewGroups: Relation<ViewGroupWorkspaceEntity[]>;
 
   @WorkspaceRelation({
     standardId: VIEW_STANDARD_FIELD_IDS.viewFilters,
@@ -124,6 +145,18 @@ export class ViewWorkspaceEntity extends BaseWorkspaceEntity {
   })
   @WorkspaceIsNullable()
   viewFilters: Relation<ViewFilterWorkspaceEntity[]>;
+
+  @WorkspaceRelation({
+    standardId: VIEW_STANDARD_FIELD_IDS.viewFilterGroups,
+    type: RelationMetadataType.ONE_TO_MANY,
+    label: 'View Filter Groups',
+    description: 'View Filter Groups',
+    icon: 'IconFilterBolt',
+    inverseSideTarget: () => ViewFilterGroupWorkspaceEntity,
+    onDelete: RelationOnDeleteAction.SET_NULL,
+  })
+  @WorkspaceIsNullable()
+  viewFilterGroups: Relation<ViewFilterGroupWorkspaceEntity[]>;
 
   @WorkspaceRelation({
     standardId: VIEW_STANDARD_FIELD_IDS.viewSorts,
@@ -148,4 +181,87 @@ export class ViewWorkspaceEntity extends BaseWorkspaceEntity {
   })
   @WorkspaceIsSystem()
   favorites: Relation<FavoriteWorkspaceEntity[]>;
+
+  @WorkspaceField({
+    standardId: VIEW_STANDARD_FIELD_IDS.kanbanAggregateOperation,
+    type: FieldMetadataType.SELECT,
+    label: 'Aggregate operation',
+    description: 'Optional aggregate operation',
+    icon: 'IconCalculator',
+    options: [
+      {
+        value: AGGREGATE_OPERATIONS.avg,
+        label: 'Average',
+        position: 0,
+        color: 'red',
+      },
+      {
+        value: AGGREGATE_OPERATIONS.count,
+        label: 'Count',
+        position: 1,
+        color: 'purple',
+      },
+      {
+        value: AGGREGATE_OPERATIONS.max,
+        label: 'Maximum',
+        position: 2,
+        color: 'sky',
+      },
+      {
+        value: AGGREGATE_OPERATIONS.min,
+        label: 'Minimum',
+        position: 3,
+        color: 'turquoise',
+      },
+      {
+        value: AGGREGATE_OPERATIONS.sum,
+        label: 'Sum',
+        position: 4,
+        color: 'yellow',
+      },
+      {
+        value: AGGREGATE_OPERATIONS.countEmpty,
+        label: 'Count empty',
+        position: 5,
+        color: 'red',
+      },
+      {
+        value: AGGREGATE_OPERATIONS.countNotEmpty,
+        label: 'Count not empty',
+        position: 6,
+        color: 'purple',
+      },
+      {
+        value: AGGREGATE_OPERATIONS.countUniqueValues,
+        label: 'Count unique values',
+        position: 7,
+        color: 'sky',
+      },
+      {
+        value: AGGREGATE_OPERATIONS.percentageEmpty,
+        label: 'Percent empty',
+        position: 8,
+        color: 'turquoise',
+      },
+      {
+        value: AGGREGATE_OPERATIONS.percentageNotEmpty,
+        label: 'Percent not empty',
+        position: 9,
+        color: 'yellow',
+      },
+    ],
+    defaultValue: `'${AGGREGATE_OPERATIONS.count}'`,
+  })
+  @WorkspaceIsNullable()
+  kanbanAggregateOperation?: AGGREGATE_OPERATIONS | null;
+
+  @WorkspaceField({
+    standardId: VIEW_STANDARD_FIELD_IDS.kanbanAggregateOperationFieldMetadataId,
+    type: FieldMetadataType.UUID,
+    label: 'Field metadata used for aggregate operation',
+    description: 'Field metadata used for aggregate operation',
+    defaultValue: null,
+  })
+  @WorkspaceIsNullable()
+  kanbanAggregateOperationFieldMetadataId?: string | null;
 }

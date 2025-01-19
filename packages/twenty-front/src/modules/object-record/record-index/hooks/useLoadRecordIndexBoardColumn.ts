@@ -4,11 +4,14 @@ import { useRecoilValue } from 'recoil';
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
 import { useFindManyRecords } from '@/object-record/hooks/useFindManyRecords';
 import { turnSortsIntoOrderBy } from '@/object-record/object-sort-dropdown/utils/turnSortsIntoOrderBy';
-import { useRecordBoard } from '@/object-record/record-board/hooks/useRecordBoard';
-import { turnObjectDropdownFilterIntoQueryFilter } from '@/object-record/record-filter/utils/turnObjectDropdownFilterIntoQueryFilter';
+import { useSetRecordIdsForColumn } from '@/object-record/record-board/hooks/useSetRecordIdsForColumn';
+import { useFilterValueDependencies } from '@/object-record/record-filter/hooks/useFilterValueDependencies';
+import { computeViewRecordGqlOperationFilter } from '@/object-record/record-filter/utils/computeViewRecordGqlOperationFilter';
+import { recordGroupDefinitionFamilyState } from '@/object-record/record-group/states/recordGroupDefinitionFamilyState';
 import { useRecordBoardRecordGqlFields } from '@/object-record/record-index/hooks/useRecordBoardRecordGqlFields';
 import { recordIndexFiltersState } from '@/object-record/record-index/states/recordIndexFiltersState';
 import { recordIndexSortsState } from '@/object-record/record-index/states/recordIndexSortsState';
+import { recordIndexViewFilterGroupsState } from '@/object-record/record-index/states/recordIndexViewFilterGroupsState';
 import { useUpsertRecordsInStore } from '@/object-record/record-store/hooks/useUpsertRecordsInStore';
 import { isDefined } from '~/utils/isDefined';
 
@@ -16,7 +19,6 @@ type UseLoadRecordIndexBoardProps = {
   objectNameSingular: string;
   boardFieldMetadataId: string | null;
   recordBoardId: string;
-  columnFieldSelectValue: string | null;
   columnId: string;
 };
 
@@ -24,20 +26,31 @@ export const useLoadRecordIndexBoardColumn = ({
   objectNameSingular,
   boardFieldMetadataId,
   recordBoardId,
-  columnFieldSelectValue,
   columnId,
 }: UseLoadRecordIndexBoardProps) => {
   const { objectMetadataItem } = useObjectMetadataItem({
     objectNameSingular,
   });
-  const { setRecordIdsForColumn } = useRecordBoard(recordBoardId);
+  const { setRecordIdsForColumn } = useSetRecordIdsForColumn(recordBoardId);
   const { upsertRecords: upsertRecordsInStore } = useUpsertRecordsInStore();
 
+  const recordGroupDefinition = useRecoilValue(
+    recordGroupDefinitionFamilyState(columnId),
+  );
+
+  const recordIndexViewFilterGroups = useRecoilValue(
+    recordIndexViewFilterGroupsState,
+  );
   const recordIndexFilters = useRecoilValue(recordIndexFiltersState);
   const recordIndexSorts = useRecoilValue(recordIndexSortsState);
-  const requestFilters = turnObjectDropdownFilterIntoQueryFilter(
+
+  const { filterValueDependencies } = useFilterValueDependencies();
+
+  const requestFilters = computeViewRecordGqlOperationFilter(
+    filterValueDependencies,
     recordIndexFilters,
     objectMetadataItem?.fields ?? [],
+    recordIndexViewFilterGroups,
   );
   const orderBy = turnSortsIntoOrderBy(objectMetadataItem, recordIndexSorts);
 
@@ -53,9 +66,9 @@ export const useLoadRecordIndexBoardColumn = ({
   const filter = {
     ...requestFilters,
     [recordIndexKanbanFieldMetadataItem?.name ?? '']: isDefined(
-      columnFieldSelectValue,
+      recordGroupDefinition?.value,
     )
-      ? { in: [columnFieldSelectValue] }
+      ? { in: [recordGroupDefinition?.value] }
       : { is: 'NULL' },
   };
 

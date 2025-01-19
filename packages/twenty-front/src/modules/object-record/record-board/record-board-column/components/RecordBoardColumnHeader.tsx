@@ -1,19 +1,18 @@
 import styled from '@emotion/styled';
 import { useContext, useState } from 'react';
-import { IconDotsVertical, IconPlus, Tag } from 'twenty-ui';
 
 import { CoreObjectNameSingular } from '@/object-metadata/types/CoreObjectNameSingular';
 import { RecordBoardContext } from '@/object-record/record-board/contexts/RecordBoardContext';
-import { RecordBoardCard } from '@/object-record/record-board/record-board-card/components/RecordBoardCard';
 import { RecordBoardColumnDropdownMenu } from '@/object-record/record-board/record-board-column/components/RecordBoardColumnDropdownMenu';
+import { RecordBoardColumnHeaderAggregateDropdown } from '@/object-record/record-board/record-board-column/components/RecordBoardColumnHeaderAggregateDropdown';
 import { RecordBoardColumnContext } from '@/object-record/record-board/record-board-column/contexts/RecordBoardColumnContext';
+import { useAggregateRecordsForRecordBoardColumn } from '@/object-record/record-board/record-board-column/hooks/useAggregateRecordsForRecordBoardColumn';
 import { useColumnNewCardActions } from '@/object-record/record-board/record-board-column/hooks/useColumnNewCardActions';
 import { useIsOpportunitiesCompanyFieldDisabled } from '@/object-record/record-board/record-board-column/hooks/useIsOpportunitiesCompanyFieldDisabled';
 import { RecordBoardColumnHotkeyScope } from '@/object-record/record-board/types/BoardColumnHotkeyScope';
-import { RecordBoardColumnDefinitionType } from '@/object-record/record-board/types/RecordBoardColumnDefinition';
-import { SingleEntitySelect } from '@/object-record/relation-picker/components/SingleEntitySelect';
-import { LightIconButton } from '@/ui/input/button/components/LightIconButton';
+import { RecordGroupDefinitionType } from '@/object-record/record-group/types/RecordGroupDefinition';
 import { usePreviousHotkeyScope } from '@/ui/utilities/hotkey/hooks/usePreviousHotkeyScope';
+import { IconDotsVertical, IconPlus, LightIconButton, Tag } from 'twenty-ui';
 
 const StyledHeader = styled.div`
   align-items: center;
@@ -21,30 +20,17 @@ const StyledHeader = styled.div`
   display: flex;
   flex-direction: row;
   justify-content: left;
-  margin-bottom: ${({ theme }) => theme.spacing(2)};
   width: 100%;
-`;
-
-const StyledAmount = styled.div`
-  color: ${({ theme }) => theme.font.color.tertiary};
-  margin-left: ${({ theme }) => theme.spacing(2)};
-`;
-
-const StyledNumChildren = styled.div`
-  align-items: center;
-  color: ${({ theme }) => theme.font.color.tertiary};
-  display: flex;
-  height: 24px;
-  justify-content: center;
-  line-height: ${({ theme }) => theme.text.lineHeight.lg};
-  width: 16px;
+  height: 100%;
 `;
 
 const StyledHeaderActions = styled.div`
   display: flex;
   margin-left: auto;
 `;
+
 const StyledHeaderContainer = styled.div`
+  background: ${({ theme }) => theme.background.primary};
   display: flex;
   justify-content: space-between;
   width: 100%;
@@ -52,6 +38,8 @@ const StyledHeaderContainer = styled.div`
 const StyledLeftContainer = styled.div`
   align-items: center;
   display: flex;
+  gap: ${({ theme }) => theme.spacing(1)};
+  overflow: hidden;
 `;
 
 const StyledRightContainer = styled.div`
@@ -59,13 +47,28 @@ const StyledRightContainer = styled.div`
   display: flex;
 `;
 
+const StyledColumn = styled.div`
+  background-color: ${({ theme }) => theme.background.primary};
+  display: flex;
+  flex-direction: column;
+  max-width: 200px;
+  min-width: 200px;
+
+  padding: ${({ theme }) => theme.spacing(2)};
+
+  position: relative;
+`;
+
+const StyledTag = styled(Tag)`
+  flex-shrink: 0;
+`;
+
 export const RecordBoardColumnHeader = () => {
+  const { columnDefinition } = useContext(RecordBoardColumnContext);
   const [isBoardColumnMenuOpen, setIsBoardColumnMenuOpen] = useState(false);
   const [isHeaderHovered, setIsHeaderHovered] = useState(false);
+
   const { objectMetadataItem } = useContext(RecordBoardContext);
-  const { columnDefinition, recordCount } = useContext(
-    RecordBoardColumnContext,
-  );
 
   const {
     setHotkeyScopeAndMemorizePreviousScope,
@@ -87,14 +90,13 @@ export const RecordBoardColumnHeader = () => {
     setIsBoardColumnMenuOpen(false);
   };
 
-  const boardColumnTotal = 0;
+  const { aggregateValue, aggregateLabel } =
+    useAggregateRecordsForRecordBoardColumn();
 
-  const {
-    newRecord,
-    handleNewButtonClick,
-    handleCreateSuccess,
-    handleEntitySelect,
-  } = useColumnNewCardActions(columnDefinition.id);
+  const { handleNewButtonClick } = useColumnNewCardActions(
+    columnDefinition.id ?? '',
+  );
+
   const { isOpportunitiesCompanyFieldDisabled } =
     useIsOpportunitiesCompanyFieldDisabled();
 
@@ -103,47 +105,47 @@ export const RecordBoardColumnHeader = () => {
     !isOpportunitiesCompanyFieldDisabled;
 
   return (
-    <>
+    <StyledColumn>
       <StyledHeader
         onMouseEnter={() => setIsHeaderHovered(true)}
         onMouseLeave={() => setIsHeaderHovered(false)}
       >
         <StyledHeaderContainer>
           <StyledLeftContainer>
-            <Tag
+            <StyledTag
               onClick={handleBoardColumnMenuOpen}
               variant={
-                columnDefinition.type === RecordBoardColumnDefinitionType.Value
+                columnDefinition.type === RecordGroupDefinitionType.Value
                   ? 'solid'
                   : 'outline'
               }
               color={
-                columnDefinition.type === RecordBoardColumnDefinitionType.Value
+                columnDefinition.type === RecordGroupDefinitionType.Value
                   ? columnDefinition.color
                   : 'transparent'
               }
               text={columnDefinition.title}
               weight={
-                columnDefinition.type === RecordBoardColumnDefinitionType.Value
+                columnDefinition.type === RecordGroupDefinitionType.Value
                   ? 'regular'
                   : 'medium'
               }
             />
-            {!!boardColumnTotal && (
-              <StyledAmount>${boardColumnTotal}</StyledAmount>
-            )}
-            <StyledNumChildren>{recordCount}</StyledNumChildren>
+            <RecordBoardColumnHeaderAggregateDropdown
+              aggregateValue={aggregateValue}
+              dropdownId={`record-board-column-aggregate-dropdown-${columnDefinition.id}`}
+              objectMetadataItem={objectMetadataItem}
+              aggregateLabel={aggregateLabel}
+            />
           </StyledLeftContainer>
           <StyledRightContainer>
             {isHeaderHovered && (
               <StyledHeaderActions>
-                {columnDefinition.actions.length > 0 && (
-                  <LightIconButton
-                    accent="tertiary"
-                    Icon={IconDotsVertical}
-                    onClick={handleBoardColumnMenuOpen}
-                  />
-                )}
+                <LightIconButton
+                  accent="tertiary"
+                  Icon={IconDotsVertical}
+                  onClick={handleBoardColumnMenuOpen}
+                />
 
                 <LightIconButton
                   accent="tertiary"
@@ -155,32 +157,12 @@ export const RecordBoardColumnHeader = () => {
           </StyledRightContainer>
         </StyledHeaderContainer>
       </StyledHeader>
-      {isBoardColumnMenuOpen && columnDefinition.actions.length > 0 && (
+      {isBoardColumnMenuOpen && (
         <RecordBoardColumnDropdownMenu
           onClose={handleBoardColumnMenuClose}
           stageId={columnDefinition.id}
         />
       )}
-      {newRecord?.isCreating &&
-        newRecord.position === 'first' &&
-        (newRecord.isOpportunity ? (
-          <SingleEntitySelect
-            disableBackgroundBlur
-            onCancel={() => handleCreateSuccess('first', columnDefinition.id)}
-            onEntitySelected={(company) =>
-              company && handleEntitySelect('first', company)
-            }
-            relationObjectNameSingular={CoreObjectNameSingular.Company}
-            relationPickerScopeId="relation-picker"
-            selectedRelationRecordIds={[]}
-          />
-        ) : (
-          <RecordBoardCard
-            isCreating={true}
-            onCreateSuccess={() => handleCreateSuccess('first')}
-            position="first"
-          />
-        ))}
-    </>
+    </StyledColumn>
   );
 };

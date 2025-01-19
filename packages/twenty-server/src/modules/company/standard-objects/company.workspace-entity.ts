@@ -1,3 +1,5 @@
+import { FieldMetadataType } from 'twenty-shared';
+
 import { Relation } from 'src/engine/workspace-manager/workspace-sync-metadata/interfaces/relation.interface';
 
 import { SEARCH_VECTOR_FIELD } from 'src/engine/metadata-modules/constants/search-vector-field.constants';
@@ -8,7 +10,6 @@ import {
 import { AddressMetadata } from 'src/engine/metadata-modules/field-metadata/composite-types/address.composite-type';
 import { CurrencyMetadata } from 'src/engine/metadata-modules/field-metadata/composite-types/currency.composite-type';
 import { LinksMetadata } from 'src/engine/metadata-modules/field-metadata/composite-types/links.composite-type';
-import { FieldMetadataType } from 'src/engine/metadata-modules/field-metadata/field-metadata.entity';
 import { IndexType } from 'src/engine/metadata-modules/index-metadata/index-metadata.entity';
 import {
   RelationMetadataType,
@@ -21,12 +22,16 @@ import { WorkspaceField } from 'src/engine/twenty-orm/decorators/workspace-field
 import { WorkspaceIsDeprecated } from 'src/engine/twenty-orm/decorators/workspace-is-deprecated.decorator';
 import { WorkspaceIsNullable } from 'src/engine/twenty-orm/decorators/workspace-is-nullable.decorator';
 import { WorkspaceIsSystem } from 'src/engine/twenty-orm/decorators/workspace-is-system.decorator';
+import { WorkspaceIsUnique } from 'src/engine/twenty-orm/decorators/workspace-is-unique.decorator';
 import { WorkspaceJoinColumn } from 'src/engine/twenty-orm/decorators/workspace-join-column.decorator';
 import { WorkspaceRelation } from 'src/engine/twenty-orm/decorators/workspace-relation.decorator';
 import { COMPANY_STANDARD_FIELD_IDS } from 'src/engine/workspace-manager/workspace-sync-metadata/constants/standard-field-ids';
+import { STANDARD_OBJECT_ICONS } from 'src/engine/workspace-manager/workspace-sync-metadata/constants/standard-object-icons';
 import { STANDARD_OBJECT_IDS } from 'src/engine/workspace-manager/workspace-sync-metadata/constants/standard-object-ids';
-import { getTsVectorColumnExpressionFromFields } from 'src/engine/workspace-manager/workspace-sync-metadata/utils/get-ts-vector-column-expression.util';
-import { ActivityTargetWorkspaceEntity } from 'src/modules/activity/standard-objects/activity-target.workspace-entity';
+import {
+  FieldTypeAndNameMetadata,
+  getTsVectorColumnExpressionFromFields,
+} from 'src/engine/workspace-manager/workspace-sync-metadata/utils/get-ts-vector-column-expression.util';
 import { AttachmentWorkspaceEntity } from 'src/modules/attachment/standard-objects/attachment.workspace-entity';
 import { FavoriteWorkspaceEntity } from 'src/modules/favorite/standard-objects/favorite.workspace-entity';
 import { NoteTargetWorkspaceEntity } from 'src/modules/note/standard-objects/note-target.workspace-entity';
@@ -39,13 +44,19 @@ import { WorkspaceMemberWorkspaceEntity } from 'src/modules/workspace-member/sta
 const NAME_FIELD_NAME = 'name';
 const DOMAIN_NAME_FIELD_NAME = 'domainName';
 
+export const SEARCH_FIELDS_FOR_COMPANY: FieldTypeAndNameMetadata[] = [
+  { name: NAME_FIELD_NAME, type: FieldMetadataType.TEXT },
+  { name: DOMAIN_NAME_FIELD_NAME, type: FieldMetadataType.LINKS },
+];
+
 @WorkspaceEntity({
   standardId: STANDARD_OBJECT_IDS.company,
   namePlural: 'companies',
   labelSingular: 'Company',
   labelPlural: 'Companies',
   description: 'A company',
-  icon: 'IconBuildingSkyscraper',
+  icon: STANDARD_OBJECT_ICONS.company,
+  shortcut: 'C',
   labelIdentifierStandardId: COMPANY_STANDARD_FIELD_IDS.name,
 })
 export class CompanyWorkspaceEntity extends BaseWorkspaceEntity {
@@ -66,10 +77,7 @@ export class CompanyWorkspaceEntity extends BaseWorkspaceEntity {
       'The company website URL. We use this url to fetch the company icon',
     icon: 'IconLink',
   })
-  /*
-  TODO: add soon once we've confirmed it's stabled
   @WorkspaceIsUnique()
-  */
   [DOMAIN_NAME_FIELD_NAME]?: LinksMetadata;
 
   @WorkspaceField({
@@ -140,9 +148,9 @@ export class CompanyWorkspaceEntity extends BaseWorkspaceEntity {
     label: 'Position',
     description: 'Company record position',
     icon: 'IconHierarchy2',
+    defaultValue: 0,
   })
   @WorkspaceIsSystem()
-  @WorkspaceIsNullable()
   position: number;
 
   @WorkspaceField({
@@ -187,19 +195,6 @@ export class CompanyWorkspaceEntity extends BaseWorkspaceEntity {
 
   @WorkspaceJoinColumn('accountOwner')
   accountOwnerId: string | null;
-
-  @WorkspaceRelation({
-    standardId: COMPANY_STANDARD_FIELD_IDS.activityTargets,
-    type: RelationMetadataType.ONE_TO_MANY,
-    label: 'Activities',
-    description: 'Activities tied to the company',
-    icon: 'IconCheckbox',
-    inverseSideTarget: () => ActivityTargetWorkspaceEntity,
-    onDelete: RelationOnDeleteAction.CASCADE,
-  })
-  @WorkspaceIsNullable()
-  @WorkspaceIsSystem()
-  activityTargets: Relation<ActivityTargetWorkspaceEntity[]>;
 
   @WorkspaceRelation({
     standardId: COMPANY_STANDARD_FIELD_IDS.taskTargets,
@@ -292,10 +287,9 @@ export class CompanyWorkspaceEntity extends BaseWorkspaceEntity {
     description: SEARCH_VECTOR_FIELD.description,
     icon: 'IconUser',
     generatedType: 'STORED',
-    asExpression: getTsVectorColumnExpressionFromFields([
-      { name: NAME_FIELD_NAME, type: FieldMetadataType.TEXT },
-      { name: DOMAIN_NAME_FIELD_NAME, type: FieldMetadataType.LINKS },
-    ]),
+    asExpression: getTsVectorColumnExpressionFromFields(
+      SEARCH_FIELDS_FOR_COMPANY,
+    ),
   })
   @WorkspaceIsNullable()
   @WorkspaceIsSystem()
